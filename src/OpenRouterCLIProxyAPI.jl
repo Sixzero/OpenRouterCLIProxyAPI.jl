@@ -1,7 +1,7 @@
 module OpenRouterCLIProxyAPI
 
 using OpenRouter
-using OpenRouter: add_provider, ChatCompletionSchema, AnthropicSchema, ProviderEndpoint,
+using OpenRouter: add_provider, set_provider!, ChatCompletionSchema, AnthropicSchema, ProviderEndpoint,
                   get_global_cache, Pricing, ZERO_PRICING
 
 export inject_cli_proxy_endpoints!, cli_proxy_model_transform, setup_cli_proxy!
@@ -47,14 +47,11 @@ cli_proxy_model_transform(model_id::AbstractString) = get(MODEL_MAP_REVERSE, mod
 # ============ Endpoint Injection ============
 
 """
-    inject_cli_proxy_endpoints!(provider_name::String="cli_proxy_api"; mutate::Bool=false)
+    inject_cli_proxy_endpoints!(provider_name::String="cli_proxy_api")
 
-Inject cli_proxy_api endpoints into cached models.
-
-- `mutate=false` (default): Adds new endpoint, preserves originals
-- `mutate=true`: Overwrites all existing endpoints to point to cli_proxy_api
+Inject cli_proxy_api endpoints into cached models (adds new endpoint, preserves originals).
 """
-function inject_cli_proxy_endpoints!(provider_name::String="cli_proxy_api"; mutate::Bool=false)
+function inject_cli_proxy_endpoints!(provider_name::String="cli_proxy_api")
     cache = get_global_cache()
     count = 0
 
@@ -66,52 +63,63 @@ function inject_cli_proxy_endpoints!(provider_name::String="cli_proxy_api"; muta
             continue
         end
 
-        if mutate
-            # Mutate all existing endpoints to point to cli_proxy_api
-            for ep in cached.endpoints.endpoints
-                ep.provider_name = provider_name
-                ep.tag = "$(ep.tag)>$(provider_name)"
-                ep.name = native_id
-                ep.model_name = native_id
-            end
-            count += length(cached.endpoints.endpoints)
-        else
-            # Add new endpoint without overwriting
-            existing = findfirst(ep -> ep.provider_name == provider_name, cached.endpoints.endpoints)
-            if existing !== nothing
-                continue
-            end
-
-            base_pricing = if !isempty(cached.endpoints.endpoints)
-                cached.endpoints.endpoints[1].pricing
-            else
-                ZERO_PRICING
-            end
-
-            new_endpoint = ProviderEndpoint(;
-                name = native_id,
-                model_name = native_id,
-                context_length = cached.model.context_length,
-                pricing = base_pricing,
-                provider_name = provider_name,
-                tag = provider_name,
-                quantization = nothing,
-                max_completion_tokens = nothing,
-                max_prompt_tokens = nothing,
-                supported_parameters = nothing,
-                uptime_last_30m = nothing,
-                supports_implicit_caching = nothing,
-                status = nothing
-            )
-
-            push!(cached.endpoints.endpoints, new_endpoint)
-            count += 1
+        # Add new endpoint without overwriting
+        existing = findfirst(ep -> ep.provider_name == provider_name, cached.endpoints.endpoints)
+        if existing !== nothing
+            continue
         end
+
+        base_pricing = if !isempty(cached.endpoints.endpoints)
+            cached.endpoints.endpoints[1].pricing
+        else
+            ZERO_PRICING
+        end
+
+        new_endpoint = ProviderEndpoint(;
+            name = native_id,
+            model_name = native_id,
+            context_length = cached.model.context_length,
+            pricing = base_pricing,
+            provider_name = provider_name,
+            tag = provider_name,
+            quantization = nothing,
+            max_completion_tokens = nothing,
+            max_prompt_tokens = nothing,
+            supported_parameters = nothing,
+            uptime_last_30m = nothing,
+            supports_implicit_caching = nothing,
+            status = nothing
+        )
+
+        push!(cached.endpoints.endpoints, new_endpoint)
+        count += 1
     end
 
-    action = mutate ? "Mutated" : "Injected"
-    @info "$action $count cli_proxy_api endpoints"
+    @info "Injected $count cli_proxy_api endpoints"
     return count
+end
+
+# ============ Provider Override ============
+
+"""
+    override_providers!(base_url, api_key_env_var)
+
+Override anthropic and openai providers to route through cli_proxy_api.
+"""
+function override_providers!(base_url::String, api_key_env_var::String)
+    for name in ("anthropic", "openai")
+        set_provider!(
+            name,
+            base_url,
+            "Bearer",
+            api_key_env_var,
+            Dict{String,String}(),
+            cli_proxy_model_transform,
+            ChatCompletionSchema(),
+            "$name (overridden to cli_proxy_api)"
+        )
+    end
+    @info "Overrode anthropic and openai providers to route through cli_proxy_api"
 end
 
 # ============ Setup ============
@@ -128,7 +136,8 @@ Complete setup for CLI proxy:
 1. Register the cli_proxy_api provider
 2. Inject endpoints into all mapped models
 
-Set `mutate=true` to overwrite existing endpoints instead of adding new ones.
+Set `mutate=true` to override original providers (anthropic, openai) to route through cli_proxy_api.
+This allows `anthropic:anthropic/claude-sonnet-4.5` to transparently route through the proxy.
 """
 function setup_cli_proxy!(;
     base_url::String = "http://localhost:8317/v1",
@@ -136,6 +145,7 @@ function setup_cli_proxy!(;
     provider_name::String = "cli_proxy_api",
     mutate::Bool = false
 )
+    # Always register cli_proxy_api provider
     add_provider(
         provider_name,
         base_url,
@@ -147,7 +157,11 @@ function setup_cli_proxy!(;
         "CLI Proxy API - routes to local proxy"
     )
 
-    count = inject_cli_proxy_endpoints!(provider_name; mutate)
+    if mutate
+        override_providers!(base_url, api_key_env_var)
+    end
+
+    count = mutate ? 0 : inject_cli_proxy_endpoints!(provider_name)
 
     @info "CLI Proxy setup complete" provider_name base_url mutate
     return count
