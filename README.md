@@ -16,7 +16,15 @@ Pkg.add(url="https://github.com/sixzero/OpenRouterCLIProxyAPI.jl")
 
 ## Prerequisites
 
-1. Install and run [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)
+1. Install (or update) [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI):
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/brokechubb/cliproxyapi-installer/refs/heads/master/cliproxyapi-installer | bash
+   ```
+   Re-run the same command to upgrade to the latest version (config is preserved).
+   After upgrading, restart the service:
+   ```bash
+   systemctl --user restart cliproxyapi.service
+   ```
 2. Authenticate with your provider (Claude, OpenAI, Gemini, etc.)
 
 ## Usage
@@ -44,7 +52,7 @@ setup_cli_proxy!(
 
 ## Supported Models
 
-**Anthropic:** claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5, claude-opus-4.1, claude-opus-4, claude-sonnet-4, claude-3.7-sonnet, claude-3.5-haiku
+**Anthropic:** claude-opus-4.6, claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5, claude-opus-4.1, claude-opus-4, claude-sonnet-4, claude-3.7-sonnet, claude-3.5-haiku
 
 **OpenAI:** gpt-5, gpt-5.1, gpt-5.2, gpt-5-codex, gpt-5.1-codex, gpt-5.1-codex-mini, gpt-5.1-codex-max
 
