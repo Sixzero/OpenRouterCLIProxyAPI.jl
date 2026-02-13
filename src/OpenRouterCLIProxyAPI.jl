@@ -1,8 +1,8 @@
 module OpenRouterCLIProxyAPI
 
 using OpenRouter
-using OpenRouter: add_provider, set_provider!, ChatCompletionSchema, AnthropicSchema, ProviderEndpoint,
-                  get_global_cache, Pricing, ZERO_PRICING
+using OpenRouter: add_provider, set_provider!, ChatCompletionSchema, ChatCompletionAnthropicSchema,
+                  AnthropicSchema, ProviderEndpoint, get_global_cache, Pricing, ZERO_PRICING
 
 export inject_cli_proxy_endpoints!, cli_proxy_model_transform, setup_cli_proxy!
 export MODEL_MAP, MODEL_MAP_REVERSE
@@ -108,6 +108,7 @@ end
 Override anthropic and openai providers to route through cli_proxy_api.
 """
 function override_providers!(base_url::String, api_key_env_var::String)
+    schemas = Dict("anthropic" => ChatCompletionAnthropicSchema(), "openai" => ChatCompletionSchema())
     for name in ("anthropic", "openai")
         set_provider!(
             name,
@@ -116,7 +117,7 @@ function override_providers!(base_url::String, api_key_env_var::String)
             api_key_env_var,
             Dict{String,String}(),
             cli_proxy_model_transform,
-            ChatCompletionSchema(),
+            schemas[name],
             "$name (overridden to cli_proxy_api)"
         )
     end
