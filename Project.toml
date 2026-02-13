@@ -1,7 +1,7 @@
 name = "OpenRouterCLIProxyAPI"
 uuid = "d0aa8731-5480-4640-9779-77688f8e2236"
 authors = ["SixZero <havliktomi@hotmail.com> and contributors"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 OpenRouter = "b1229eab-bc7b-489c-92b5-04baf87d8d0b"
