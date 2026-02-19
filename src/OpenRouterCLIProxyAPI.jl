@@ -107,7 +107,7 @@ end
 
 Override anthropic and openai providers to route through cli_proxy_api.
 """
-function override_providers!(base_url::String, api_key_env_var::String)
+function override_providers!(base_url::String, api_key_env_var::String; verbose::Bool=false)
     schemas = Dict("anthropic" => ChatCompletionAnthropicSchema(), "openai" => ChatCompletionSchema())
     for name in ("anthropic", "openai")
         set_provider!(
@@ -121,7 +121,7 @@ function override_providers!(base_url::String, api_key_env_var::String)
             "$name (overridden to cli_proxy_api)"
         )
     end
-    @info "Overrode anthropic and openai providers to route through cli_proxy_api"
+    verbose && @info "Overrode anthropic and openai providers to route through cli_proxy_api"
 end
 
 # ============ Setup ============
@@ -140,12 +140,14 @@ Complete setup for CLI proxy:
 
 Set `mutate=true` to override original providers (anthropic, openai) to route through cli_proxy_api.
 This allows `anthropic:anthropic/claude-sonnet-4.5` to transparently route through the proxy.
+Set `verbose=true` to log setup details.
 """
 function setup_cli_proxy!(;
     base_url::String = "http://localhost:8317/v1",
     api_key_env_var::String = "CLIPROXYAPI_API_KEY",
     provider_name::String = "cli_proxy_api",
-    mutate::Bool = false
+    mutate::Bool = false,
+    verbose::Bool = false
 )
     # Always register cli_proxy_api provider
     add_provider(
@@ -160,12 +162,12 @@ function setup_cli_proxy!(;
     )
 
     if mutate
-        override_providers!(base_url, api_key_env_var)
+        override_providers!(base_url, api_key_env_var; verbose)
     end
 
     count = mutate ? 0 : inject_cli_proxy_endpoints!(provider_name)
 
-    @info "CLI Proxy setup complete" provider_name base_url mutate
+    verbose && @info "CLI Proxy setup complete" provider_name base_url mutate
     return count
 end
 
