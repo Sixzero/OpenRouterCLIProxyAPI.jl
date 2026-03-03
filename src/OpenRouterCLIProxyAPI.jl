@@ -20,6 +20,7 @@ const MODEL_MAP_ANTHROPIC = Dict{String,String}(
     "claude-haiku-4-5-20251001" => "anthropic/claude-haiku-4.5",
     "claude-opus-4-5-20251101" => "anthropic/claude-opus-4.5",
     "claude-opus-4-6" => "anthropic/claude-opus-4.6",
+    "claude-sonnet-4-6" => "anthropic/claude-sonnet-4.6",
 )
 
 const MODEL_MAP_OPENAI = Dict{String,String}(
