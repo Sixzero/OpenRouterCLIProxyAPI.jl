@@ -31,7 +31,14 @@ const MODEL_MAP_OPENAI = Dict{String,String}(
     "gpt-5.1-codex-mini" => "openai/gpt-5.1-codex-mini",
     "gpt-5.1-codex-max" => "openai/gpt-5.1-codex-max",
     "gpt-5.2" => "openai/gpt-5.2",
+    "gpt-5.2-codex" => "openai/gpt-5.2-codex",
+    "gpt-5.3-codex" => "openai/gpt-5.3-codex",
 )
+
+# Models only on CLI proxy (not on OpenRouter) — usable via cli_proxy_api provider directly
+const PROXY_ONLY_MODELS = [
+    "gpt-5.3-codex-spark",
+]
 
 const MODEL_MAP = merge(MODEL_MAP_ANTHROPIC, MODEL_MAP_OPENAI)
 const MODEL_MAP_REVERSE = Dict(v => k for (k, v) in MODEL_MAP)
