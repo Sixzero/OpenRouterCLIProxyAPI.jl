@@ -50,6 +50,30 @@ setup_cli_proxy!(
 )
 ```
 
+## CLIProxyAPI Management
+
+### Check running version
+```bash
+~/cliproxyapi/cli-proxy-api --version 2>&1 | head -1
+```
+
+### Update
+```bash
+# Re-run installer (preserves config, upgrades binary)
+curl -fsSL https://raw.githubusercontent.com/brokechubb/cliproxyapi-installer/refs/heads/master/cliproxyapi-installer | bash
+
+# Then restart
+systemctl --user restart cliproxyapi.service
+```
+
+### Restart (e.g. after update, or if stale process running old binary)
+```bash
+systemctl --user restart cliproxyapi.service
+systemctl --user status cliproxyapi.service
+```
+
+**Note:** Models are hardcoded in the binary — new models only appear after updating to a release that includes them. Models also only show if your logged-in account has access.
+
 ## Supported Models
 
 **Anthropic:** claude-opus-4.6, claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5, claude-opus-4.1, claude-opus-4, claude-sonnet-4, claude-3.7-sonnet, claude-3.5-haiku
