@@ -36,7 +36,7 @@ using OpenRouterCLIProxyAPI
 # One-time setup (registers provider + injects endpoints)
 setup_cli_proxy!()
 
-response = aigen("Hello!", "cli_proxy_api:anthropic/claude-opus-4.5")
+response = aigen("Hello!", "cli_proxy_api:anthropic/claude-opus-4.6")
 ```
 
 ### Custom Configuration
@@ -76,9 +76,9 @@ systemctl --user status cliproxyapi.service
 
 ## Supported Models
 
-**Anthropic:** claude-opus-4.6, claude-sonnet-4.6, claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5, claude-opus-4.1, claude-opus-4, claude-sonnet-4, claude-3.7-sonnet, claude-3.5-haiku
+**Anthropic:** claude-opus-4.6, claude-sonnet-4.6, claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5, claude-opus-4.1, claude-sonnet-4
 
-**OpenAI:** gpt-5, gpt-5.1, gpt-5.2, gpt-5-codex, gpt-5.1-codex, gpt-5.1-codex-mini, gpt-5.1-codex-max, gpt-5.2-codex, gpt-5.3-codex, gpt-5.3-codex-spark
+**OpenAI:** gpt-5.4, gpt-5.3-codex, gpt-5.3-codex-spark, gpt-5.2-codex, and older models
 
 ## Related
 
