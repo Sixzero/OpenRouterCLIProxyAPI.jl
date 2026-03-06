@@ -1,8 +1,10 @@
 module OpenRouterCLIProxyAPI
 
+using Dates: now
 using OpenRouter
 using OpenRouter: add_provider, set_provider!, ChatCompletionSchema, ChatCompletionAnthropicSchema,
-                  AnthropicSchema, ProviderEndpoint, get_global_cache, Pricing, ZERO_PRICING
+                  AnthropicSchema, ProviderEndpoint, get_global_cache, Pricing, ZERO_PRICING,
+                  OpenRouterModel, CachedModel, ModelProviders
 
 export inject_cli_proxy_endpoints!, cli_proxy_model_transform, setup_cli_proxy!
 export MODEL_MAP, MODEL_MAP_REVERSE
@@ -33,12 +35,29 @@ const MODEL_MAP_OPENAI = Dict{String,String}(
     "gpt-5.2" => "openai/gpt-5.2",
     "gpt-5.2-codex" => "openai/gpt-5.2-codex",
     "gpt-5.3-codex" => "openai/gpt-5.3-codex",
+    "gpt-5.3-codex-spark" => "openai/gpt-5.3-codex-spark",
 )
 
-# Models only on CLI proxy (not on OpenRouter) — usable via cli_proxy_api provider directly
-const PROXY_ONLY_MODELS = [
-    "gpt-5.3-codex-spark",
-]
+# Pricing matching gpt-5.3-codex (best estimate — no public pricing for spark yet)
+const CODEX_SPARK_PRICING = Pricing(
+    prompt = "0.00000175",
+    completion = "0.000014",
+    request = nothing,
+    image = nothing,
+    web_search = nothing,
+    internal_reasoning = nothing,
+    image_output = nothing,
+    audio = nothing,
+    input_audio_cache = nothing,
+    input_cache_read = "0.000000175",
+    input_cache_write = nothing,
+    discount = nothing,
+)
+
+# Models only on CLI proxy (not on OpenRouter) — need synthetic cache entries
+const PROXY_ONLY_MODELS = Dict{String,@NamedTuple{name::String, context_length::Int, pricing::Pricing}}(
+    "openai/gpt-5.3-codex-spark" => (name = "GPT 5.3 Codex Spark", context_length = 128000, pricing = CODEX_SPARK_PRICING),
+)
 
 const MODEL_MAP = merge(MODEL_MAP_ANTHROPIC, MODEL_MAP_OPENAI)
 const MODEL_MAP_REVERSE = Dict(v => k for (k, v) in MODEL_MAP)
@@ -63,6 +82,31 @@ Inject cli_proxy_api endpoints into cached models (adds new endpoint, preserves 
 function inject_cli_proxy_endpoints!(provider_name::String="cli_proxy_api")
     cache = get_global_cache()
     count = 0
+
+    # Register proxy-only models as synthetic cache entries
+    for (or_model_id, meta) in PROXY_ONLY_MODELS
+        haskey(cache.models, or_model_id) && continue
+        native_id = get(MODEL_MAP_REVERSE, or_model_id, or_model_id)
+        endpoint = ProviderEndpoint(;
+            name = native_id,
+            model_name = native_id,
+            context_length = meta.context_length,
+            pricing = meta.pricing,
+            provider_name = provider_name,
+            tag = provider_name,
+            quantization = nothing,
+            max_completion_tokens = meta.context_length,
+            max_prompt_tokens = nothing,
+            supported_parameters = nothing,
+            uptime_last_30m = nothing,
+            supports_implicit_caching = nothing,
+            status = nothing
+        )
+        model = OpenRouterModel(or_model_id, meta.name, "CLI proxy only model", meta.context_length, meta.pricing, nothing, nothing)
+        providers = ModelProviders(or_model_id, meta.name, nothing, nothing, nothing, [endpoint])
+        cache.models[or_model_id] = CachedModel(model, providers, now(), true)
+        count += 1
+    end
 
     for (native_id, or_model_id) in MODEL_MAP
         cached = get(cache.models, or_model_id, nothing)
