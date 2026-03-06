@@ -163,7 +163,7 @@ end
 """
     override_providers!(base_url, api_key_env_var)
 
-Override anthropic and openai providers to route through cli_proxy_api.
+Override anthropic, openai, and google-ai-studio providers to route through cli_proxy_api.
 """
 function override_providers!(base_url::String, api_key_env_var::String; verbose::Bool=false)
     schemas = Dict("anthropic" => ChatCompletionAnthropicSchema(), "openai" => ChatCompletionSchema())
@@ -179,7 +179,21 @@ function override_providers!(base_url::String, api_key_env_var::String; verbose:
             "$name (overridden to cli_proxy_api)"
         )
     end
-    verbose && @info "Overrode anthropic and openai providers to route through cli_proxy_api"
+
+    # google-ai-studio: proxy speaks OpenAI format, just strip "google/" prefix
+    google_proxy_transform(id::AbstractString) = replace(id, r"^google/" => "")
+    set_provider!(
+        "google-ai-studio",
+        base_url,
+        "Bearer",
+        api_key_env_var,
+        Dict{String,String}(),
+        google_proxy_transform,
+        ChatCompletionSchema(),
+        "google-ai-studio (overridden to cli_proxy_api)"
+    )
+
+    verbose && @info "Overrode anthropic, openai, and google-ai-studio providers to route through cli_proxy_api"
 end
 
 # ============ Setup ============
