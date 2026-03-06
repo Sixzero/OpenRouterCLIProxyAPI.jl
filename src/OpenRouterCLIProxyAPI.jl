@@ -87,23 +87,28 @@ function inject_cli_proxy_endpoints!(provider_name::String="cli_proxy_api")
     for (or_model_id, meta) in PROXY_ONLY_MODELS
         haskey(cache.models, or_model_id) && continue
         native_id = get(MODEL_MAP_REVERSE, or_model_id, or_model_id)
-        endpoint = ProviderEndpoint(;
-            name = native_id,
-            model_name = native_id,
-            context_length = meta.context_length,
-            pricing = meta.pricing,
-            provider_name = provider_name,
-            tag = provider_name,
-            quantization = nothing,
-            max_completion_tokens = meta.context_length,
-            max_prompt_tokens = nothing,
-            supported_parameters = nothing,
-            uptime_last_30m = nothing,
-            supports_implicit_caching = nothing,
-            status = nothing
-        )
+        # Derive original provider from model ID (e.g. "openai" from "openai/gpt-5.3-codex-spark")
+        orig_provider = split(or_model_id, "/")[1]
+        endpoints = ProviderEndpoint[]
+        for (pname, ptag) in [(orig_provider, orig_provider), (provider_name, provider_name)]
+            push!(endpoints, ProviderEndpoint(;
+                name = native_id,
+                model_name = native_id,
+                context_length = meta.context_length,
+                pricing = meta.pricing,
+                provider_name = pname,
+                tag = ptag,
+                quantization = nothing,
+                max_completion_tokens = meta.context_length,
+                max_prompt_tokens = nothing,
+                supported_parameters = nothing,
+                uptime_last_30m = nothing,
+                supports_implicit_caching = nothing,
+                status = nothing
+            ))
+        end
         model = OpenRouterModel(or_model_id, meta.name, "CLI proxy only model", meta.context_length, meta.pricing, nothing, nothing)
-        providers = ModelProviders(or_model_id, meta.name, nothing, nothing, nothing, [endpoint])
+        providers = ModelProviders(or_model_id, meta.name, nothing, nothing, nothing, endpoints)
         cache.models[or_model_id] = CachedModel(model, providers, now(), true)
         count += 1
     end
@@ -213,11 +218,12 @@ function setup_cli_proxy!(;
         "CLI Proxy API - routes to local proxy"
     )
 
+    # Always register proxy-only models + inject endpoints (even in mutate mode)
+    count = inject_cli_proxy_endpoints!(provider_name)
+
     if mutate
         override_providers!(base_url, api_key_env_var; verbose)
     end
-
-    count = mutate ? 0 : inject_cli_proxy_endpoints!(provider_name)
 
     verbose && @info "CLI Proxy setup complete" provider_name base_url mutate
     return count
