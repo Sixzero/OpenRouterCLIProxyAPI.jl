@@ -161,11 +161,13 @@ end
 # ============ Provider Override ============
 
 """
-    override_providers!(base_url, api_key_env_var)
+    override_providers!(base_url, api_key_env_var; gemini, verbose)
 
-Override anthropic, openai, and google-ai-studio providers to route through cli_proxy_api.
+Override providers to route through cli_proxy_api.
+Set `gemini=true` to also override google-ai-studio.
 """
-function override_providers!(base_url::String, api_key_env_var::String; verbose::Bool=false)
+function override_providers!(base_url::String, api_key_env_var::String;
+                             gemini::Bool=false, verbose::Bool=false)
     schemas = Dict("anthropic" => ChatCompletionAnthropicSchema(), "openai" => ChatCompletionSchema())
     for name in ("anthropic", "openai")
         set_provider!(
@@ -180,20 +182,21 @@ function override_providers!(base_url::String, api_key_env_var::String; verbose:
         )
     end
 
-    # google-ai-studio: proxy speaks OpenAI format, just strip "google/" prefix
-    google_proxy_transform(id::AbstractString) = replace(id, r"^google/" => "")
-    set_provider!(
-        "google-ai-studio",
-        base_url,
-        "Bearer",
-        api_key_env_var,
-        Dict{String,String}(),
-        google_proxy_transform,
-        ChatCompletionSchema(),
-        "google-ai-studio (overridden to cli_proxy_api)"
-    )
+    if gemini
+        google_proxy_transform(id::AbstractString) = replace(id, r"^google/" => "")
+        set_provider!(
+            "google-ai-studio",
+            base_url,
+            "Bearer",
+            api_key_env_var,
+            Dict{String,String}(),
+            google_proxy_transform,
+            ChatCompletionSchema(),
+            "google-ai-studio (overridden to cli_proxy_api)"
+        )
+    end
 
-    verbose && @info "Overrode anthropic, openai, and google-ai-studio providers to route through cli_proxy_api"
+    verbose && @info "Overrode providers to route through cli_proxy_api" gemini
 end
 
 # ============ Setup ============
@@ -203,15 +206,16 @@ end
         base_url::String="http://localhost:8317/v1",
         api_key_env_var::String="CLIPROXYAPI_API_KEY",
         provider_name::String="cli_proxy_api",
-        mutate::Bool=false
+        mutate::Bool=false,
+        gemini::Bool=false
     )
 
 Complete setup for CLI proxy:
 1. Register the cli_proxy_api provider
 2. Inject endpoints into all mapped models
 
-Set `mutate=true` to override original providers (anthropic, openai) to route through cli_proxy_api.
-This allows `anthropic:anthropic/claude-sonnet-4.5` to transparently route through the proxy.
+Set `mutate=true` to override anthropic and openai providers to route through cli_proxy_api.
+Set `gemini=true` to also override google-ai-studio.
 Set `verbose=true` to log setup details.
 """
 function setup_cli_proxy!(;
@@ -219,6 +223,7 @@ function setup_cli_proxy!(;
     api_key_env_var::String = "CLIPROXYAPI_API_KEY",
     provider_name::String = "cli_proxy_api",
     mutate::Bool = false,
+    gemini::Bool = false,
     verbose::Bool = false
 )
     # Always register cli_proxy_api provider
@@ -237,7 +242,7 @@ function setup_cli_proxy!(;
     count = inject_cli_proxy_endpoints!(provider_name)
 
     if mutate
-        override_providers!(base_url, api_key_env_var; verbose)
+        override_providers!(base_url, api_key_env_var; gemini, verbose)
     end
 
     verbose && @info "CLI Proxy setup complete" provider_name base_url mutate
