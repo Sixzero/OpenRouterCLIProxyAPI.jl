@@ -25,7 +25,26 @@ Pkg.add(url="https://github.com/sixzero/OpenRouterCLIProxyAPI.jl")
    ```bash
    systemctl --user restart cliproxyapi.service
    ```
-2. Authenticate with your provider (Claude, OpenAI, Gemini, etc.)
+2. Authenticate with your provider(s):
+   ```bash
+   # OpenAI (Codex) — requires ChatGPT Pro/Plus subscription
+   ~/cliproxyapi/cli-proxy-api -config ~/cliproxyapi/config.yaml -codex-login
+
+   # Claude — requires Claude Pro/Max subscription
+   ~/cliproxyapi/cli-proxy-api -config ~/cliproxyapi/config.yaml -claude-login
+
+   # Gemini (Google)
+   ~/cliproxyapi/cli-proxy-api -config ~/cliproxyapi/config.yaml -login
+
+   # Qwen
+   ~/cliproxyapi/cli-proxy-api -config ~/cliproxyapi/config.yaml -qwen-login
+
+   # Add -no-browser to print the URL instead of opening a browser
+   ```
+   After authenticating, restart the service:
+   ```bash
+   systemctl --user restart cliproxyapi.service
+   ```
 
 ## Usage
 
