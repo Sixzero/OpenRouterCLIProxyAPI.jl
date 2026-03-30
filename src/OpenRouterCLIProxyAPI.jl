@@ -37,6 +37,7 @@ const MODEL_MAP_OPENAI = Dict{String,String}(
     "gpt-5.3-codex" => "openai/gpt-5.3-codex",
     "gpt-5.3-codex-spark" => "openai/gpt-5.3-codex-spark",
     "gpt-5.4" => "openai/gpt-5.4",
+    "gpt-5.4-mini" => "openai/gpt-5.4-mini",
 )
 
 # Pricing matching gpt-5.3-codex (best estimate — no public pricing for spark yet)
