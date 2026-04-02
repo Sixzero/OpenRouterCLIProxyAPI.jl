@@ -169,19 +169,27 @@ Set `gemini=true` to also override google-ai-studio.
 """
 function override_providers!(base_url::String, api_key_env_var::String;
                              gemini::Bool=false, verbose::Bool=false)
-    schemas = Dict("anthropic" => ChatCompletionAnthropicSchema(), "openai" => ChatCompletionSchema())
-    for name in ("anthropic", "openai")
-        set_provider!(
-            name,
-            base_url,
-            "Bearer",
-            api_key_env_var,
-            Dict{String,String}(),
-            cli_proxy_model_transform,
-            schemas[name],
-            "$name (overridden to cli_proxy_api)"
-        )
-    end
+    anthropic_base_url = replace(base_url, r"/v1/?$" => "")
+    set_provider!(
+        "anthropic",
+        anthropic_base_url,
+        "Bearer",
+        api_key_env_var,
+        Dict{String,String}(),
+        cli_proxy_model_transform,
+        AnthropicSchema(),
+        "anthropic (overridden to cli_proxy_api)"
+    )
+    set_provider!(
+        "openai",
+        base_url,
+        "Bearer",
+        api_key_env_var,
+        Dict{String,String}(),
+        cli_proxy_model_transform,
+        ChatCompletionSchema(),
+        "openai (overridden to cli_proxy_api)"
+    )
 
     if gemini
         google_proxy_transform(id::AbstractString) = replace(id, r"^google/" => "")
