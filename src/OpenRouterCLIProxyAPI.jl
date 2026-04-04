@@ -61,7 +61,23 @@ const PROXY_ONLY_MODELS = Dict{String,@NamedTuple{name::String, context_length::
     "openai/gpt-5.3-codex-spark" => (name = "GPT 5.3 Codex Spark", context_length = 128000, pricing = CODEX_SPARK_PRICING),
 )
 
-const MODEL_MAP = merge(MODEL_MAP_ANTHROPIC, MODEL_MAP_OPENAI)
+const MODEL_MAP_GEMINI = Dict{String,String}(
+    "gemini-2.5-flash"              => "google/gemini-2.5-flash",
+    "gemini-2.5-flash-lite"         => "google/gemini-2.5-flash-lite",
+    "gemini-2.5-pro"                => "google/gemini-2.5-pro",
+    "gemini-3-flash"                => "google/gemini-3-flash-preview",
+    "gemini-3-flash-preview"        => "google/gemini-3-flash-preview",
+    "gemini-3-pro-preview"          => "google/gemini-3-pro-image-preview",
+    "gemini-3-pro-low"              => "google/gemini-3-pro-image-preview",
+    "gemini-3-pro-high"             => "google/gemini-3-pro-image-preview",
+    "gemini-3.1-flash-image"        => "google/gemini-3.1-flash-image-preview",
+    "gemini-3.1-flash-lite-preview" => "google/gemini-3.1-flash-lite-preview",
+    "gemini-3.1-pro-preview"        => "google/gemini-3.1-pro-preview",
+    "gemini-3.1-pro-low"            => "google/gemini-3.1-pro-preview",
+    "gemini-3.1-pro-high"           => "google/gemini-3.1-pro-preview",
+)
+
+const MODEL_MAP = merge(MODEL_MAP_ANTHROPIC, MODEL_MAP_OPENAI, MODEL_MAP_GEMINI)
 const MODEL_MAP_REVERSE = Dict(v => k for (k, v) in MODEL_MAP)
 
 # ============ Transform Function ============
