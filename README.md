@@ -55,7 +55,7 @@ using OpenRouterCLIProxyAPI
 # One-time setup (registers provider + injects endpoints)
 setup_cli_proxy!()
 
-response = aigen("Hello!", "cli_proxy_api:anthropic/claude-opus-4.6")
+response = aigen("Hello!", "cli_proxy_api:anthropic/claude-opus-4.7")
 ```
 
 ### Custom Configuration
@@ -93,9 +93,11 @@ systemctl --user status cliproxyapi.service
 
 **Note:** Models are hardcoded in the binary — new models only appear after updating to a release that includes them. Models also only show if your logged-in account has access.
 
+If a model isn't in the upstream release yet, see [`docs/CUSTOM_BINARY.md`](docs/CUSTOM_BINARY.md) for how to build and deploy a patched binary.
+
 ## Supported Models
 
-**Anthropic:** claude-opus-4.6, claude-sonnet-4.6, claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5, claude-opus-4.1, claude-sonnet-4
+**Anthropic:** claude-opus-4.7, claude-opus-4.6, claude-sonnet-4.6, claude-opus-4.5, claude-sonnet-4.5, claude-haiku-4.5, claude-opus-4.1, claude-sonnet-4
 
 **OpenAI:** gpt-5.4, gpt-5.3-codex, gpt-5.3-codex-spark, gpt-5.2-codex, and older models
 
