@@ -21,7 +21,7 @@ const MODEL_MAP_ANTHROPIC = Dict{String,String}(
     "claude-sonnet-4-5-20250929" => "anthropic/claude-sonnet-4.5",
     "claude-haiku-4-5-20251001" => "anthropic/claude-haiku-4.5",
     "claude-opus-4-5-20251101" => "anthropic/claude-opus-4.5",
-    "claude-opus-4-7" => "anthropic/claude-opus-4.7",
+    "claude-opus-4-7" => "anthropic/claude-opus-4.7",  # LATEST Anthropic model - UPDATE ON NEW RELEASE
     "claude-opus-4-6" => "anthropic/claude-opus-4.6",
     "claude-sonnet-4-6" => "anthropic/claude-sonnet-4.6",
 )
@@ -37,7 +37,7 @@ const MODEL_MAP_OPENAI = Dict{String,String}(
     "gpt-5.2-codex" => "openai/gpt-5.2-codex",
     "gpt-5.3-codex" => "openai/gpt-5.3-codex",
     "gpt-5.3-codex-spark" => "openai/gpt-5.3-codex-spark",
-    "gpt-5.4" => "openai/gpt-5.4",
+    "gpt-5.4" => "openai/gpt-5.4",          # LATEST OpenAI model - UPDATE ON NEW RELEASE
     "gpt-5.4-mini" => "openai/gpt-5.4-mini",
 )
 
