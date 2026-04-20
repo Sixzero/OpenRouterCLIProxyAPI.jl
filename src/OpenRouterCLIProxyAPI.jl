@@ -186,8 +186,10 @@ Set `gemini=true` to also override google-ai-studio.
 """
 # User-Agent prefix that CLIProxyAPI recognizes as real Claude Code
 # (see helps.ShouldCloak: `strings.HasPrefix(userAgent, "claude-cli")`).
-# Sending this bypasses the proxy's system-prompt cloaking so user sys_msg passes through.
-const CLAUDE_CLI_USER_AGENT = "claude-cli/2.1.63 (external, cli)"
+# Sending this bypasses the proxy's system-prompt cloaking so user sys_msg passes through,
+# but it also seems to trigger upstream Anthropic rate-limits for opus/sonnet (429).
+# Disabled for now; proxy will cloak (replace system) but requests succeed.
+# const CLAUDE_CLI_USER_AGENT = "claude-cli/2.1.63 (external, cli)"
 
 function override_providers!(base_url::String, api_key_env_var::String;
                              gemini::Bool=false, verbose::Bool=false)
@@ -197,7 +199,7 @@ function override_providers!(base_url::String, api_key_env_var::String;
         anthropic_base_url,
         "Bearer",
         api_key_env_var,
-        Dict{String,String}("User-Agent" => CLAUDE_CLI_USER_AGENT),
+        Dict{String,String}(),  # to bypass proxy cloaking: Dict("User-Agent" => CLAUDE_CLI_USER_AGENT)
         cli_proxy_model_transform,
         AnthropicSchema(),
         "anthropic (overridden to cli_proxy_api)"
