@@ -27,18 +27,12 @@ const MODEL_MAP_ANTHROPIC = Dict{String,String}(
 )
 
 const MODEL_MAP_OPENAI = Dict{String,String}(
-    "gpt-5" => "openai/gpt-5",
-    "gpt-5-codex" => "openai/gpt-5-codex",
-    "gpt-5.1" => "openai/gpt-5.1",
-    "gpt-5.1-codex" => "openai/gpt-5.1-codex",
-    "gpt-5.1-codex-mini" => "openai/gpt-5.1-codex-mini",
-    "gpt-5.1-codex-max" => "openai/gpt-5.1-codex-max",
     "gpt-5.2" => "openai/gpt-5.2",
-    "gpt-5.2-codex" => "openai/gpt-5.2-codex",
     "gpt-5.3-codex" => "openai/gpt-5.3-codex",
     "gpt-5.3-codex-spark" => "openai/gpt-5.3-codex-spark",
-    "gpt-5.4" => "openai/gpt-5.4",          # LATEST OpenAI model - UPDATE ON NEW RELEASE
+    "gpt-5.4" => "openai/gpt-5.4",
     "gpt-5.4-mini" => "openai/gpt-5.4-mini",
+    "gpt-5.5" => "openai/gpt-5.5",          # LATEST OpenAI model - UPDATE ON NEW RELEASE
 )
 
 # Pricing matching gpt-5.3-codex (best estimate — no public pricing for spark yet)
