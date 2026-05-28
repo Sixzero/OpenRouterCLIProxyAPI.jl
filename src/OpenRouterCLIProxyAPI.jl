@@ -21,7 +21,8 @@ const MODEL_MAP_ANTHROPIC = Dict{String,String}(
     "claude-sonnet-4-5-20250929" => "anthropic/claude-sonnet-4.5",
     "claude-haiku-4-5-20251001" => "anthropic/claude-haiku-4.5",
     "claude-opus-4-5-20251101" => "anthropic/claude-opus-4.5",
-    "claude-opus-4-7" => "anthropic/claude-opus-4.7",  # LATEST Anthropic model - UPDATE ON NEW RELEASE
+    "claude-opus-4-7" => "anthropic/claude-opus-4.7",
+    "claude-opus-4-8" => "anthropic/claude-opus-4.8",  # LATEST Anthropic model - UPDATE ON NEW RELEASE
     "claude-opus-4-6" => "anthropic/claude-opus-4.6",
     "claude-sonnet-4-6" => "anthropic/claude-sonnet-4.6",
 )
@@ -62,10 +63,11 @@ const MODEL_MAP_GEMINI = Dict{String,String}(
     "gemini-2.5-pro"                => "google/gemini-2.5-pro",
     "gemini-3-flash"                => "google/gemini-3-flash-preview",
     "gemini-3-flash-preview"        => "google/gemini-3-flash-preview",
-    "gemini-3-pro-preview"          => "google/gemini-3-pro-image-preview",
-    "gemini-3-pro-low"              => "google/gemini-3-pro-image-preview",
-    "gemini-3-pro-high"             => "google/gemini-3-pro-image-preview",
+    "gemini-3-pro-preview"          => "google/gemini-3-pro-preview",
+    "gemini-3-pro-low"              => "google/gemini-3-pro-preview",
+    "gemini-3-pro-high"             => "google/gemini-3-pro-preview",
     "gemini-3.1-flash-image"        => "google/gemini-3.1-flash-image-preview",
+    "gemini-3.1-flash-lite"         => "google/gemini-3.1-flash-lite",
     "gemini-3.1-flash-lite-preview" => "google/gemini-3.1-flash-lite-preview",
     "gemini-3.1-pro-preview"        => "google/gemini-3.1-pro-preview",
     "gemini-3.1-pro-low"            => "google/gemini-3.1-pro-preview",
@@ -210,7 +212,8 @@ function override_providers!(base_url::String, api_key_env_var::String;
     )
 
     if gemini
-        google_proxy_transform(id::AbstractString) = replace(id, r"^google/" => "")
+        google_proxy_transform(id::AbstractString) =
+            get(MODEL_MAP_REVERSE, String(id), replace(id, r"^google/" => ""))
         set_provider!(
             "google-ai-studio",
             base_url,
