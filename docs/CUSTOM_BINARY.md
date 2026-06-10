@@ -167,6 +167,7 @@ actually usable/visible everywhere else. Search each repo for
 | 4 | `OpenRouter.jl` `scripts/export_models_json.jl` | Re-run it (`julia --project=. scripts/export_models_json.jl`) to refresh `frontend/src/assets/models_data.json`. The OpenRouter list must already carry the model. |
 | 5 | `todoforai/packages` `shared-fbe/src/thinkingLevels.ts` → `THINKING_LEVELS_BY_MODEL` | Add `'<normalized-id>': [...levels]` (normalized = lowercase, dots→dashes, last path segment). Mirror the registry's `thinking.levels`. Without this the UI shows no thinking badges. |
 | 6 | `todoforai/frontend` `src/constants/recommendedModels.ts` → `RECOMMENDED_MODELS` | Add the model if it should appear in the recommended list (place by tier). |
+| 7 | `OpenRouter.jl` `src/schemas.jl` → `drop_sampling` (in `build_payload(::AnthropicSchema, …)`) | If the model deprecates `temperature`/`top_p` (Opus ≥ 4.7, Fable), make sure the match covers its id — otherwise the API returns `400: top_p is deprecated for this model`. Covered by the `drop_sampling` testset in `test/runtests.jl`; add a case there. |
 
 Note: `MODEL_MAP` keys are the proxy's **native** ids (`claude-fable-5`); values
 are **OpenRouter-style** ids (`anthropic/claude-fable-5`).
