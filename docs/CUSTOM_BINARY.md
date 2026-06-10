@@ -153,6 +153,27 @@ const MODEL_MAP_ANTHROPIC = Dict{String,String}(
 After `router-for-me/models` merges your PR, revert the `modelsURLs` change in
 `model_updater.go` and rebuild so we're back on the upstream feed.
 
+## Cross-repo checklist (all places to touch on a new release)
+
+Steps 1–6 above make the proxy serve the model. The places below make it
+actually usable/visible everywhere else. Search each repo for
+`UPDATE ON NEW RELEASE` — every such marker is a spot to revisit.
+
+| # | Repo / file | What to change |
+|---|---|---|
+| 1 | `awesome/CLIProxyAPI` `internal/registry/models/models.json` | Add the model block (id, display_name, created, thinking levels), then rebuild + restart (steps 2–4). |
+| 2 | `OpenRouterCLIProxyAPI.jl` `src/OpenRouterCLIProxyAPI.jl` → `MODEL_MAP_ANTHROPIC` / `MODEL_MAP_OPENAI` / `MODEL_MAP_GEMINI` | Add `"<native-id>" => "<provider>/<or-id>"`. Without this you get `502: unknown provider for model …`. Move the `# LATEST … UPDATE ON NEW RELEASE` comment to the new flagship. |
+| 3 | `OpenRouter.jl` `src/storage.jl` → `MODEL_ALIASES` | If it's the new provider flagship, repoint the short alias (`"claude"`, `"gpt5"`, …). |
+| 4 | `OpenRouter.jl` `scripts/export_models_json.jl` | Re-run it (`julia --project=. scripts/export_models_json.jl`) to refresh `frontend/src/assets/models_data.json`. The OpenRouter list must already carry the model. |
+| 5 | `todoforai/packages` `shared-fbe/src/thinkingLevels.ts` → `THINKING_LEVELS_BY_MODEL` | Add `'<normalized-id>': [...levels]` (normalized = lowercase, dots→dashes, last path segment). Mirror the registry's `thinking.levels`. Without this the UI shows no thinking badges. |
+| 6 | `todoforai/frontend` `src/constants/recommendedModels.ts` → `RECOMMENDED_MODELS` | Add the model if it should appear in the recommended list (place by tier). |
+
+Notes:
+- Empty-endpoint models (e.g. OpenRouter `~…-latest` aliases) are dropped by the
+  export script and won't ship to the frontend — use the concrete pinned id.
+- `MODEL_MAP` keys are the proxy's **native** ids (`claude-fable-5`); values are
+  **OpenRouter-style** ids (`anthropic/claude-fable-5`).
+
 ## Rollback
 
 If something goes wrong:
