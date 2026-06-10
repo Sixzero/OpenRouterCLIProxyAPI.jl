@@ -168,11 +168,8 @@ actually usable/visible everywhere else. Search each repo for
 | 5 | `todoforai/packages` `shared-fbe/src/thinkingLevels.ts` → `THINKING_LEVELS_BY_MODEL` | Add `'<normalized-id>': [...levels]` (normalized = lowercase, dots→dashes, last path segment). Mirror the registry's `thinking.levels`. Without this the UI shows no thinking badges. |
 | 6 | `todoforai/frontend` `src/constants/recommendedModels.ts` → `RECOMMENDED_MODELS` | Add the model if it should appear in the recommended list (place by tier). |
 
-Notes:
-- Empty-endpoint models (e.g. OpenRouter `~…-latest` aliases) are dropped by the
-  export script and won't ship to the frontend — use the concrete pinned id.
-- `MODEL_MAP` keys are the proxy's **native** ids (`claude-fable-5`); values are
-  **OpenRouter-style** ids (`anthropic/claude-fable-5`).
+Note: `MODEL_MAP` keys are the proxy's **native** ids (`claude-fable-5`); values
+are **OpenRouter-style** ids (`anthropic/claude-fable-5`).
 
 ## Rollback
 
