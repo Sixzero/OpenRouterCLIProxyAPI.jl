@@ -1,12 +1,14 @@
 module OpenRouterCLIProxyAPI
 
-using Dates: now
+using Dates: now, DateTime, Day
+using JSON3
 using OpenRouter
 using OpenRouter: add_provider, set_provider!, ChatCompletionSchema, ChatCompletionAnthropicSchema,
                   AnthropicSchema, ProviderEndpoint, get_global_cache, Pricing, ZERO_PRICING,
                   OpenRouterModel, CachedModel, ModelProviders
 
 export inject_cli_proxy_endpoints!, cli_proxy_model_transform, setup_cli_proxy!
+export check_cli_proxy_auth
 export MODEL_MAP, MODEL_MAP_REVERSE
 
 # ============ Model Mappings ============
@@ -278,6 +280,62 @@ function setup_cli_proxy!(;
 
     verbose && @info "CLI Proxy setup complete" provider_name base_url mutate
     return count
+end
+
+# ============ Auth Check ============
+
+# Login command hint per account type (gemini intentionally omitted — not used).
+const _LOGIN_CMD = Dict(
+    "claude" => "-claude-login",
+    "codex"  => "-codex-login",
+)
+
+"""
+    check_cli_proxy_auth(; auth_dir="~/.cli-proxy-api", warn_within=Day(1))
+
+Inspect cli_proxy_api OAuth token files and log their expiry status at startup.
+Warns (non-fatal) for any expired or soon-to-expire account, with the exact
+re-login command. Gemini accounts are ignored. Returns the number of accounts
+that need attention.
+"""
+function check_cli_proxy_auth(; auth_dir::AbstractString="~/.cli-proxy-api", warn_within=Day(1))
+    dir = expanduser(auth_dir)
+    isdir(dir) || return 0
+
+    need_action = 0
+    for f in readdir(dir; join=true)
+        endswith(f, ".json") || continue
+        try
+            acc = JSON3.read(read(f, String))
+            typ = String(get(acc, :type, ""))
+            typ == "gemini" && continue                 # not used — skip
+            get(acc, :disabled, false) === true && continue
+
+            exp_raw = get(acc, :expired, nothing)
+            exp_raw === nothing && continue
+            # Strip timezone offset ("2026-06-10T18:50:06+02:00" -> naive DateTime).
+            naive = replace(String(exp_raw), r"(Z|[+-]\d\d:\d\d)$" => "")
+            expires = DateTime(naive[1:19])
+
+            email = get(acc, :email, "")
+            cmd = get(_LOGIN_CMD, typ, "-login")
+            login = "cd ~/cliproxyapi && ./cli-proxy-api $cmd -config ./config.yaml"
+            t = now()
+
+            if expires <= t
+                @warn "cli_proxy_api token EXPIRED — re-login required" provider=typ email expired_at=expires login
+                need_action += 1
+            elseif expires - t <= warn_within
+                @warn "cli_proxy_api token expiring soon" provider=typ email expires_at=expires login
+                need_action += 1
+            else
+                @info "cli_proxy_api token OK" provider=typ email expires_at=expires
+            end
+        catch e
+            @warn "Skipping invalid cli_proxy_api auth file" file=basename(f) exception=e
+        end
+    end
+    return need_action
 end
 
 end # module
