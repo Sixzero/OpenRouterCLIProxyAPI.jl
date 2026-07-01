@@ -32,12 +32,11 @@ const MODEL_MAP_ANTHROPIC = Dict{String,String}(
 )
 
 const MODEL_MAP_OPENAI = Dict{String,String}(
-    "gpt-5.2" => "openai/gpt-5.2",
-    "gpt-5.3-codex" => "openai/gpt-5.3-codex",
     "gpt-5.3-codex-spark" => "openai/gpt-5.3-codex-spark",
     "gpt-5.4" => "openai/gpt-5.4",
     "gpt-5.4-mini" => "openai/gpt-5.4-mini",
     "gpt-5.5" => "openai/gpt-5.5",          # LATEST OpenAI model - UPDATE ON NEW RELEASE
+    "codex-auto-review" => "openai/codex-auto-review",
 )
 
 # Pricing matching gpt-5.3-codex (best estimate — no public pricing for spark yet)
@@ -56,9 +55,26 @@ const CODEX_SPARK_PRICING = Pricing(
     discount = nothing,
 )
 
+# Auto-review internally routes to gpt-5.4 — mirror its pricing.
+const CODEX_AUTO_REVIEW_PRICING = Pricing(
+    prompt = "0.0000025",
+    completion = "0.000015",
+    request = nothing,
+    image = nothing,
+    web_search = nothing,
+    internal_reasoning = nothing,
+    image_output = nothing,
+    audio = nothing,
+    input_audio_cache = nothing,
+    input_cache_read = "0.00000025",
+    input_cache_write = nothing,
+    discount = nothing,
+)
+
 # Models only on CLI proxy (not on OpenRouter) — need synthetic cache entries
 const PROXY_ONLY_MODELS = Dict{String,@NamedTuple{name::String, context_length::Int, pricing::Pricing}}(
     "openai/gpt-5.3-codex-spark" => (name = "GPT 5.3 Codex Spark", context_length = 128000, pricing = CODEX_SPARK_PRICING),
+    "openai/codex-auto-review" => (name = "Codex Auto Review", context_length = 272000, pricing = CODEX_AUTO_REVIEW_PRICING),
 )
 
 const MODEL_MAP_GEMINI = Dict{String,String}(
