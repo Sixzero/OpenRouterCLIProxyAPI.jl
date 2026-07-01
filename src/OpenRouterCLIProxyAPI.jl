@@ -28,6 +28,7 @@ const MODEL_MAP_ANTHROPIC = Dict{String,String}(
     "claude-fable-5" => "anthropic/claude-fable-5",  # LATEST Anthropic model - UPDATE ON NEW RELEASE
     "claude-opus-4-6" => "anthropic/claude-opus-4.6",
     "claude-sonnet-4-6" => "anthropic/claude-sonnet-4.6",
+    "claude-sonnet-5" => "anthropic/claude-sonnet-5",
 )
 
 const MODEL_MAP_OPENAI = Dict{String,String}(
