@@ -43,4 +43,25 @@ end
             end
         end
     end
+
+    @testset "mutate routes xAI/Grok through the proxy with native model names" begin
+        original = Dict(name => get_provider_info(name) for name in ("anthropic", "openai", "google-ai-studio", "xai"))
+
+        try
+            setup_cli_proxy!(; mutate=true, base_url="http://localhost:8317/v1")
+
+            xai = get_provider_info("xai")
+            # xai must now hit the local proxy, not api.x.ai (region-locked, no creds).
+            @test xai.base_url == "http://localhost:8317/v1"
+            @test xai.schema isa ChatCompletionSchema
+            # The `x-ai/` prefix must be stripped to the proxy's native model name.
+            @test xai.model_name_transform("x-ai/grok-4.5") == "grok-4.5"
+            @test xai.model_name_transform("x-ai/grok-build-0.1") == "grok-build-0.1"
+        finally
+            for (name, info) in original
+                set_provider!(name, info.base_url, info.auth_header_format, info.api_key_env_var,
+                    copy(info.default_headers), info.model_name_transform, info.schema, info.notes)
+            end
+        end
+    end
 end

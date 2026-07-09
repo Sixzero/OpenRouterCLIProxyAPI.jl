@@ -231,6 +231,24 @@ function override_providers!(base_url::String, api_key_env_var::String;
         "openai (overridden to cli_proxy_api)"
     )
 
+    # xAI/Grok: strip the `x-ai/` prefix so the proxy receives its native model
+    # name (e.g. `x-ai/grok-4.5` -> `grok-4.5`). Routing through the proxy is
+    # required for Grok — the proxy holds the xAI OAuth auth (and any egress
+    # proxy_url for region-locked models like grok-4.5); the native `xai`
+    # provider would hit api.x.ai directly with no credentials/region handling.
+    xai_proxy_transform(id::AbstractString) =
+        get(MODEL_MAP_REVERSE, String(id), replace(id, r"^x-ai/" => ""))
+    set_provider!(
+        "xai",
+        base_url,
+        "Bearer",
+        api_key_env_var,
+        Dict{String,String}(),
+        xai_proxy_transform,
+        ChatCompletionSchema(),
+        "xai (overridden to cli_proxy_api)"
+    )
+
     if gemini
         google_proxy_transform(id::AbstractString) =
             get(MODEL_MAP_REVERSE, String(id), replace(id, r"^google/" => ""))
@@ -264,7 +282,9 @@ Complete setup for CLI proxy:
 1. Register the cli_proxy_api provider
 2. Inject endpoints into all mapped models
 
-Set `mutate=true` to override anthropic and openai providers to route through cli_proxy_api.
+Set `mutate=true` to override the anthropic, openai and xai providers to route
+through cli_proxy_api (xai is always included since Grok has no usable direct
+path — the proxy holds its OAuth auth and egress proxy).
 Set `gemini=true` to also override google-ai-studio.
 Set `verbose=true` to log setup details.
 """
