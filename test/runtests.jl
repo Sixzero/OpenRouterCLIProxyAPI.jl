@@ -44,6 +44,11 @@ end
         end
     end
 
+    @testset "transforms live GPT-5.6 proxy models to native names" begin
+        @test cli_proxy_model_transform("openai/gpt-5.6-sol") == "gpt-5.6-sol"
+        @test cli_proxy_model_transform("openai/gpt-5.6-terra") == "gpt-5.6-terra"
+    end
+
     @testset "mutate routes xAI/Grok through the proxy with native model names" begin
         original = Dict(name => get_provider_info(name) for name in ("anthropic", "openai", "google-ai-studio", "xai"))
 
