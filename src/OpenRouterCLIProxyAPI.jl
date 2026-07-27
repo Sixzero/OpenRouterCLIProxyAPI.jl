@@ -12,35 +12,44 @@ export check_cli_proxy_auth
 export MODEL_MAP, MODEL_MAP_REVERSE
 
 # ============ Model Mappings ============
-# Native proxy model ID => OpenRouter model ID
+# Native proxy model ID => OpenRouter model ID.
+#
+# Slugs are derived from the native ID, so registering a model is a one-line list
+# entry — no hand-written slug to typo or drift. Only pairs that break the vendor's
+# own naming rule live in MODEL_ALIASES below.
 
-const MODEL_MAP_ANTHROPIC = Dict{String,String}(
-    "claude-3-5-haiku-20241022" => "anthropic/claude-3.5-haiku",
-    "claude-3-7-sonnet-20250219" => "anthropic/claude-3.7-sonnet",
-    "claude-sonnet-4-20250514" => "anthropic/claude-sonnet-4",
-    "claude-opus-4-20250514" => "anthropic/claude-opus-4",
-    "claude-opus-4-1-20250805" => "anthropic/claude-opus-4.1",
-    "claude-sonnet-4-5-20250929" => "anthropic/claude-sonnet-4.5",
-    "claude-haiku-4-5-20251001" => "anthropic/claude-haiku-4.5",
-    "claude-opus-4-5-20251101" => "anthropic/claude-opus-4.5",
-    "claude-opus-4-7" => "anthropic/claude-opus-4.7",
-    "claude-opus-4-8" => "anthropic/claude-opus-4.8",
-    "claude-opus-5" => "anthropic/claude-opus-5",  # LATEST Anthropic model - UPDATE ON NEW RELEASE
-    "claude-fable-5" => "anthropic/claude-fable-5",
-    "claude-opus-4-6" => "anthropic/claude-opus-4.6",
-    "claude-sonnet-4-6" => "anthropic/claude-sonnet-4.6",
-    "claude-sonnet-5" => "anthropic/claude-sonnet-5",
-)
+# "claude-opus-4-5-20251101" => "claude-opus-4-5"
+strip_release_date(id::AbstractString) = replace(id, r"-\d{8}$" => "")
+# "claude-opus-4-5" => "claude-opus-4.5"
+dotted_version(id::AbstractString) = replace(id, r"(\d)-(\d)" => s"\1.\2")
 
-const MODEL_MAP_OPENAI = Dict{String,String}(
-    "gpt-5.3-codex-spark" => "openai/gpt-5.3-codex-spark",
-    "gpt-5.4" => "openai/gpt-5.4",
-    "gpt-5.4-mini" => "openai/gpt-5.4-mini",
-    "gpt-5.5" => "openai/gpt-5.5",
-    "gpt-5.6-sol" => "openai/gpt-5.6-sol",   # LATEST OpenAI model - UPDATE ON NEW RELEASE
-    "gpt-5.6-terra" => "openai/gpt-5.6-terra",
-    "codex-auto-review" => "openai/codex-auto-review",
-)
+const NATIVE_ANTHROPIC = [
+    "claude-3-5-haiku-20241022",
+    "claude-3-7-sonnet-20250219",
+    "claude-sonnet-4-20250514",
+    "claude-opus-4-20250514",
+    "claude-opus-4-1-20250805",
+    "claude-sonnet-4-5-20250929",
+    "claude-haiku-4-5-20251001",
+    "claude-opus-4-5-20251101",
+    "claude-opus-4-6",
+    "claude-opus-4-7",
+    "claude-opus-4-8",
+    "claude-sonnet-4-6",
+    "claude-fable-5",
+    "claude-sonnet-5",
+    "claude-opus-5",  # LATEST Anthropic model - UPDATE ON NEW RELEASE
+]
+
+const NATIVE_OPENAI = [
+    "gpt-5.3-codex-spark",
+    "gpt-5.4",
+    "gpt-5.4-mini",
+    "gpt-5.5",
+    "gpt-5.6-terra",
+    "gpt-5.6-sol",   # LATEST OpenAI model - UPDATE ON NEW RELEASE
+    "codex-auto-review",
+]
 
 # Pricing matching gpt-5.3-codex (best estimate — no public pricing for spark yet)
 const CODEX_SPARK_PRICING = Pricing(
@@ -80,25 +89,43 @@ const PROXY_ONLY_MODELS = Dict{String,@NamedTuple{name::String, context_length::
     "openai/codex-auto-review" => (name = "Codex Auto Review", context_length = 272000, pricing = CODEX_AUTO_REVIEW_PRICING),
 )
 
-const MODEL_MAP_GEMINI = Dict{String,String}(
-    "gemini-2.5-flash"              => "google/gemini-2.5-flash",
-    "gemini-2.5-flash-lite"         => "google/gemini-2.5-flash-lite",
-    "gemini-2.5-pro"                => "google/gemini-2.5-pro",
-    "gemini-3-flash"                => "google/gemini-3-flash-preview",
-    "gemini-3-flash-preview"        => "google/gemini-3-flash-preview",
-    "gemini-3-pro-preview"          => "google/gemini-3-pro-preview",
-    "gemini-3-pro-low"              => "google/gemini-3-pro-preview",
-    "gemini-3-pro-high"             => "google/gemini-3-pro-preview",
-    "gemini-3.1-flash-image"        => "google/gemini-3.1-flash-image-preview",
-    "gemini-3.1-flash-lite"         => "google/gemini-3.1-flash-lite",
-    "gemini-3.1-flash-lite-preview" => "google/gemini-3.1-flash-lite-preview",
-    "gemini-3.1-pro-preview"        => "google/gemini-3.1-pro-preview",
-    "gemini-3.1-pro-low"            => "google/gemini-3.1-pro-preview",
-    "gemini-3.1-pro-high"           => "google/gemini-3.1-pro-preview",
+const NATIVE_GEMINI = [
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-pro",
+    "gemini-3-flash-preview",
+    "gemini-3-pro-preview",
+    "gemini-3.1-flash-lite",
+    "gemini-3.1-flash-lite-preview",
+    "gemini-3.1-pro-preview",
+]
+
+# Anthropic drops the release date and writes versions with a dot; OpenAI and Google
+# use the native ID verbatim under a vendor prefix.
+const MODEL_MAP_DERIVED = merge(
+    Dict(id => "anthropic/" * dotted_version(strip_release_date(id)) for id in NATIVE_ANTHROPIC),
+    Dict(id => "openai/" * id for id in NATIVE_OPENAI),
+    Dict(id => "google/" * id for id in NATIVE_GEMINI),
 )
 
-const MODEL_MAP = merge(MODEL_MAP_ANTHROPIC, MODEL_MAP_OPENAI, MODEL_MAP_GEMINI)
-const MODEL_MAP_REVERSE = Dict(v => k for (k, v) in MODEL_MAP)
+# Native IDs that do not follow the rule above: reasoning-effort variants and the
+# proxy's unsuffixed shorthands, which all resolve to an existing OpenRouter slug.
+const MODEL_ALIASES = Dict{String,String}(
+    "gemini-3-flash"         => "google/gemini-3-flash-preview",
+    "gemini-3-pro-low"       => "google/gemini-3-pro-preview",
+    "gemini-3-pro-high"      => "google/gemini-3-pro-preview",
+    "gemini-3.1-flash-image" => "google/gemini-3.1-flash-image-preview",
+    "gemini-3.1-pro-low"     => "google/gemini-3.1-pro-preview",
+    "gemini-3.1-pro-high"    => "google/gemini-3.1-pro-preview",
+)
+
+const MODEL_MAP = merge(MODEL_MAP_DERIVED, MODEL_ALIASES)
+# Several aliases share one slug, so the reverse direction has to pick a winner:
+# merging derived last keeps the canonical native ID rather than an arbitrary alias.
+const MODEL_MAP_REVERSE = merge(
+    Dict(v => k for (k, v) in MODEL_ALIASES),
+    Dict(v => k for (k, v) in MODEL_MAP_DERIVED),
+)
 
 # ============ Transform Function ============
 
