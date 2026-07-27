@@ -49,6 +49,33 @@ end
         @test cli_proxy_model_transform("openai/gpt-5.6-terra") == "gpt-5.6-terra"
     end
 
+    @testset "derives OpenRouter slugs from native model IDs" begin
+        # Anthropic drops the release date and dots the version.
+        @test MODEL_MAP["claude-opus-4-5-20251101"] == "anthropic/claude-opus-4.5"
+        @test MODEL_MAP["claude-3-5-haiku-20241022"] == "anthropic/claude-3.5-haiku"
+        # No date, no version pair: passed through under the vendor prefix.
+        @test MODEL_MAP["claude-opus-5"] == "anthropic/claude-opus-5"
+        @test MODEL_MAP["gpt-5.4-mini"] == "openai/gpt-5.4-mini"
+        @test MODEL_MAP["gemini-2.5-pro"] == "google/gemini-2.5-pro"
+    end
+
+    @testset "reverse map resolves shared slugs to the canonical native ID" begin
+        # The reasoning-effort variants map onto one slug, which carries no hint of the
+        # effort — so the slug has to resolve back to the plain model, not to -low/-high.
+        @test cli_proxy_model_transform("google/gemini-3-pro-preview") == "gemini-3-pro-preview"
+        @test cli_proxy_model_transform("google/gemini-3.1-pro-preview") == "gemini-3.1-pro-preview"
+        # An alias is the only native ID for its slug, so it stays reachable.
+        @test cli_proxy_model_transform("google/gemini-3.1-flash-image-preview") == "gemini-3.1-flash-image"
+        @test cli_proxy_model_transform("anthropic/claude-opus-5") == "claude-opus-5"
+        # Unknown models pass through untouched for the OpenRouter fallback.
+        @test cli_proxy_model_transform("moonshotai/kimi-k2") == "moonshotai/kimi-k2"
+    end
+
+    @testset "every mapping round-trips" begin
+        @test all(haskey(MODEL_MAP_REVERSE, slug) for slug in values(MODEL_MAP))
+        @test all(haskey(MODEL_MAP, native) for native in values(MODEL_MAP_REVERSE))
+    end
+
     @testset "mutate routes xAI/Grok through the proxy with native model names" begin
         original = Dict(name => get_provider_info(name) for name in ("anthropic", "openai", "google-ai-studio", "xai"))
 
