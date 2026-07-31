@@ -47,6 +47,7 @@ end
     @testset "transforms live GPT-5.6 proxy models to native names" begin
         @test cli_proxy_model_transform("openai/gpt-5.6-sol") == "gpt-5.6-sol"
         @test cli_proxy_model_transform("openai/gpt-5.6-terra") == "gpt-5.6-terra"
+        @test cli_proxy_model_transform("openai/gpt-5.6-luna") == "gpt-5.6-luna"
     end
 
     @testset "derives OpenRouter slugs from native model IDs" begin
