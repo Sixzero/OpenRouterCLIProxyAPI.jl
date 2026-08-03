@@ -238,6 +238,13 @@ Set `gemini=true` to also override google-ai-studio.
 # Disabled for now; proxy will cloak (replace system) but requests succeed.
 # const CLAUDE_CLI_USER_AGENT = "claude-cli/2.1.63 (external, cli)"
 
+# Without this beta header the proxy returns thinking blocks with EMPTY text
+# (thinking tokens are billed but content is redacted) for opus-4.8/opus-5/sonnet-5.
+# With it, summarized thinking text is returned (non-streaming and streaming).
+# Note: opus-5 only emits thinking text with `thinking={"type":"adaptive"}` or a
+# `(high)`/`(xhigh)` model suffix — `enabled`+budget stays empty even with the header.
+const ANTHROPIC_THINKING_HEADERS = Dict("anthropic-beta" => "interleaved-thinking-2025-05-14")
+
 function override_providers!(base_url::String, api_key_env_var::String;
                              gemini::Bool=false, verbose::Bool=false)
     anthropic_base_url = replace(base_url, r"/v1/?$" => "")
@@ -246,7 +253,7 @@ function override_providers!(base_url::String, api_key_env_var::String;
         anthropic_base_url,
         "Bearer",
         api_key_env_var,
-        Dict{String,String}(),  # to bypass proxy cloaking: Dict("User-Agent" => CLAUDE_CLI_USER_AGENT)
+        ANTHROPIC_THINKING_HEADERS,  # to bypass proxy cloaking add: "User-Agent" => CLAUDE_CLI_USER_AGENT
         cli_proxy_model_transform,
         AnthropicSchema(),
         "anthropic (overridden to cli_proxy_api)"
