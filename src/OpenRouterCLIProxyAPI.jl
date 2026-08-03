@@ -241,7 +241,7 @@ Set `gemini=true` to also override google-ai-studio.
 # Without this beta header the proxy returns thinking blocks with EMPTY text
 # (thinking tokens are billed but content is redacted) for opus-4.8/opus-5/sonnet-5.
 # With it, summarized thinking text is returned (non-streaming and streaming).
-# Note: opus-5 only emits thinking text with `thinking={"type":"adaptive"}` or a
+# Note: opus-5 and fable-5 only emit thinking text with `thinking={"type":"adaptive"}` or a
 # `(high)`/`(xhigh)` model suffix — `enabled`+budget stays empty even with the header.
 const ANTHROPIC_THINKING_HEADERS = Dict("anthropic-beta" => "interleaved-thinking-2025-05-14")
 
