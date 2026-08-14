@@ -232,12 +232,14 @@ end
 Override providers to route through cli_proxy_api.
 Set `gemini=true` to also override google-ai-studio.
 """
-# User-Agent prefix that CLIProxyAPI recognizes as real Claude Code
-# (see helps.ShouldCloak: `strings.HasPrefix(userAgent, "claude-cli")`).
-# Sending this bypasses the proxy's system-prompt cloaking so user sys_msg passes through,
-# but it also seems to trigger upstream Anthropic rate-limits for opus/sonnet (429).
-# Disabled for now; proxy will cloak (replace system) but requests succeed.
-# const CLAUDE_CLI_USER_AGENT = "claude-cli/2.1.63 (external, cli)"
+# Posing as Claude Code no longer works with a User-Agent alone: since the proxy's
+# 2026-08 rebase `DetectClaudeCodeRequest` demands four strong signals (`X-App: cli`,
+# a plausible versioned native UA, the `claude-code-20250219` beta, and a well-formed
+# `metadata.user_id`), so a bare UA leaves the request cloaked — and an earlier attempt
+# at the full disguise seemed to trip upstream opus/sonnet rate limits (429).
+# We stay cloaked on purpose; the proxy replaces `system` but forwards ours into the
+# conversation, and our fork disables its MCP tool-name aliasing (see FORK_NOTES.md).
+# const CLAUDE_CLI_USER_AGENT = "claude-cli/2.1.220 (external, cli)"
 
 # Without this beta header the proxy returns thinking blocks with EMPTY text
 # (thinking tokens are billed but content is redacted) for opus-4.8/opus-5/sonnet-5.
