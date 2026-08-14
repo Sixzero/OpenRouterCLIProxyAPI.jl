@@ -234,10 +234,13 @@ Set `gemini=true` to also override google-ai-studio.
 """
 # User-Agent prefix that CLIProxyAPI recognizes as real Claude Code
 # (see helps.ShouldCloak: `strings.HasPrefix(userAgent, "claude-cli")`).
-# Sending this bypasses the proxy's system-prompt cloaking so user sys_msg passes through,
-# but it also seems to trigger upstream Anthropic rate-limits for opus/sonnet (429).
-# Disabled for now; proxy will cloak (replace system) but requests succeed.
-# const CLAUDE_CLI_USER_AGENT = "claude-cli/2.1.63 (external, cli)"
+# Sending this bypasses the proxy's cloaking, which does two things to a cloaked request:
+#   1. replaces our system prompt with Claude Code's, and
+#   2. (since the 2026-08 rebase) rewrites every tool name to `mcp__<hash>__<hash>_<name>`
+#      — cloaked+OAuth only, see claude_executor_execute.go `if oauthToken && cloaked`.
+# (2) produced `mcp__…__bash` invalid-response errors, so we pose as claude-cli again.
+# Watch for opus/sonnet 429s: an earlier attempt at this seemed to trip upstream rate limits.
+const CLAUDE_CLI_USER_AGENT = "claude-cli/2.1.220 (external, cli)"
 
 # Without this beta header the proxy returns thinking blocks with EMPTY text
 # (thinking tokens are billed but content is redacted) for opus-4.8/opus-5/sonnet-5.
@@ -285,7 +288,7 @@ function override_providers!(base_url::String, api_key_env_var::String;
         anthropic_base_url,
         "Bearer",
         api_key_env_var,
-        ANTHROPIC_THINKING_HEADERS,  # to bypass proxy cloaking add: "User-Agent" => CLAUDE_CLI_USER_AGENT
+        merge(ANTHROPIC_THINKING_HEADERS, Dict("User-Agent" => CLAUDE_CLI_USER_AGENT)),
         cli_proxy_model_transform,
         AnthropicSchema(),
         "anthropic (overridden to cli_proxy_api)"
