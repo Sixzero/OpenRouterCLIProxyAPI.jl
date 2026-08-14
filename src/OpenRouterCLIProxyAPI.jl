@@ -8,6 +8,7 @@ using OpenRouter: add_provider, set_provider!, ChatCompletionSchema, ChatComplet
                   OpenRouterModel, CachedModel, ModelProviders
 
 export inject_cli_proxy_endpoints!, cli_proxy_model_transform, setup_cli_proxy!
+export override_deepseek_to_opencode!
 export check_cli_proxy_auth
 export MODEL_MAP, MODEL_MAP_REVERSE
 
@@ -245,6 +246,37 @@ Set `gemini=true` to also override google-ai-studio.
 # `(high)`/`(xhigh)` model suffix — `enabled`+budget stays empty even with the header.
 const ANTHROPIC_THINKING_HEADERS = Dict("anthropic-beta" => "interleaved-thinking-2025-05-14")
 
+# ---- OpenCode Go (subscription) ----
+# DeepSeek V4 is included in the OpenCode Go subscription (fixed monthly quota),
+# so routing it to the metered native api.deepseek.com is simply paying twice.
+# Overriding the `deepseek` provider makes that unmissable: existing model ids
+# (`deepseek:deepseek/deepseek-v4-pro`) keep working and go to the subscription.
+const OPENCODE_GO_URL = "https://opencode.ai/zen/go/v1"
+const OPENCODE_GO_MODELS = Set(["deepseek/deepseek-v4-pro", "deepseek/deepseek-v4-flash"])
+
+"""Bare native id for OpenCode Go; unsupported DeepSeek models fail loudly
+instead of being silently posted to an endpoint that doesn't serve them."""
+function opencode_go_deepseek_transform(model_id::AbstractString)
+    id = lowercase(String(model_id))
+    id in OPENCODE_GO_MODELS ||
+        throw(ArgumentError("OpenCode Go serves $(join(sort(collect(OPENCODE_GO_MODELS)), ", ")), not \"$model_id\""))
+    return last(split(id, "/"))
+end
+
+function override_deepseek_to_opencode!(; verbose::Bool=false)
+    set_provider!(
+        "deepseek",
+        OPENCODE_GO_URL,
+        "Bearer",
+        "OPENCODE_API_KEY",
+        Dict{String,String}(),
+        opencode_go_deepseek_transform,
+        ChatCompletionSchema(),
+        "deepseek (overridden to opencode_go)"
+    )
+    verbose && @info "Overrode deepseek to route through OpenCode Go"
+end
+
 function override_providers!(base_url::String, api_key_env_var::String;
                              gemini::Bool=false, verbose::Bool=false)
     anthropic_base_url = replace(base_url, r"/v1/?$" => "")
@@ -313,7 +345,8 @@ end
         api_key_env_var::String="CLIPROXYAPI_API_KEY",
         provider_name::String="cli_proxy_api",
         mutate::Bool=false,
-        gemini::Bool=false
+        gemini::Bool=false,
+        opencode::Bool=false
     )
 
 Complete setup for CLI proxy:
@@ -324,6 +357,8 @@ Set `mutate=true` to override the anthropic, openai and xai providers to route
 through cli_proxy_api (xai is always included since Grok has no usable direct
 path — the proxy holds its OAuth auth and egress proxy).
 Set `gemini=true` to also override google-ai-studio.
+Set `opencode=true` to route `deepseek` through the OpenCode Go subscription
+(`OPENCODE_API_KEY`) instead of the metered native DeepSeek API.
 Set `verbose=true` to log setup details.
 """
 function setup_cli_proxy!(;
@@ -332,6 +367,7 @@ function setup_cli_proxy!(;
     provider_name::String = "cli_proxy_api",
     mutate::Bool = false,
     gemini::Bool = false,
+    opencode::Bool = false,
     verbose::Bool = false
 )
     # Always register cli_proxy_api provider
@@ -352,6 +388,7 @@ function setup_cli_proxy!(;
     if mutate
         override_providers!(base_url, api_key_env_var; gemini, verbose)
     end
+    opencode && override_deepseek_to_opencode!(; verbose)
 
     verbose && @info "CLI Proxy setup complete" provider_name base_url mutate
     return count
