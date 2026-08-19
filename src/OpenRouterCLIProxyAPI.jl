@@ -248,12 +248,15 @@ Set `gemini=true` to also override google-ai-studio.
 # conversation, and our fork disables its MCP tool-name aliasing (see FORK_NOTES.md).
 # const CLAUDE_CLI_USER_AGENT = "claude-cli/2.1.220 (external, cli)"
 
-# Without this beta header the proxy returns thinking blocks with EMPTY text
-# (thinking tokens are billed but content is redacted) for opus-4.8/opus-5/sonnet-5.
-# With it, summarized thinking text is returned (non-streaming and streaming).
-# Note: opus-5 and fable-5 only emit thinking text with `thinking={"type":"adaptive"}` or a
-# `(high)`/`(xhigh)` model suffix — `enabled`+budget stays empty even with the header.
-const ANTHROPIC_THINKING_HEADERS = Dict("anthropic-beta" => "interleaved-thinking-2025-05-14")
+# Thinking text visibility is a PROXY-side concern, not a client header.
+# A cloaked request (which is all of ours) gets its `Anthropic-Beta` list rebuilt
+# server-side and the caller's own betas dropped, so sending
+# `interleaved-thinking-2025-05-14` from here is a no-op — it only appeared to work
+# in early 2026-08, before the beta list changed. Without a `thinking.display` the
+# proxy sends `redact-thinking-2026-02-12` and Anthropic returns thinking blocks
+# with EMPTY text (tokens billed, nothing shown). Fixed in the proxy's config.yaml
+# with a `payload.default` rule; see CLIProxyAPI FORK_NOTES.md
+# "Anthropic thinking summaries".
 
 # ---- OpenCode Go (subscription) ----
 # DeepSeek V4 is included in the OpenCode Go subscription (fixed monthly quota),
@@ -294,7 +297,7 @@ function override_providers!(base_url::String, api_key_env_var::String;
         anthropic_base_url,
         "Bearer",
         api_key_env_var,
-        ANTHROPIC_THINKING_HEADERS,  # a claude-cli User-Agent alone does NOT bypass cloaking, see above
+        Dict{String,String}(),  # a claude-cli User-Agent alone does NOT bypass cloaking, see above
         cli_proxy_model_transform,
         AnthropicSchema(),
         "anthropic (overridden to cli_proxy_api)"
