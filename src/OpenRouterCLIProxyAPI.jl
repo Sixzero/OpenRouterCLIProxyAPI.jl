@@ -91,15 +91,21 @@ const PROXY_ONLY_MODELS = Dict{String,@NamedTuple{name::String, context_length::
     "openai/codex-auto-review" => (name = "Codex Auto Review", context_length = 272000, pricing = CODEX_AUTO_REVIEW_PRICING),
 )
 
+# Gemini reaches the proxy through the `antigravity` provider (-antigravity-login).
+# The gemini-cli path is dead for individual accounts: loadCodeAssist answers
+# `UNSUPPORTED_CLIENT` for free-tier and points at Antigravity, so those auths only
+# ever return "no valid license (#3501)".
+#
+# Antigravity exposes its own ID set rather than the AI Studio names, and bakes the
+# reasoning effort into the ID (`-high`/`-low`/`-agent`). We expose only the newest two
+# flash generations and the newest pro, which keeps every slug backed by exactly one
+# native ID — so the forward and reverse maps stay genuine inverses and no tie-break
+# between effort levels is needed. Older generations the proxy still lists (gemini-3-flash,
+# gemini-3-flash-agent, gemini-3.5-flash-low/-extra-low, gemini-3.1-pro-low) are
+# deliberately omitted. Antigravity currently has no pro above 3.1.
 const NATIVE_GEMINI = [
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-    "gemini-2.5-pro",
-    "gemini-3-flash-preview",
-    "gemini-3-pro-preview",
     "gemini-3.1-flash-lite",
-    "gemini-3.1-flash-lite-preview",
-    "gemini-3.1-pro-preview",
+    "gemini-3.1-flash-image",
 ]
 
 # Anthropic drops the release date and writes versions with a dot; OpenAI and Google
@@ -112,13 +118,14 @@ const MODEL_MAP_DERIVED = merge(
 
 # Native IDs that do not follow the rule above: reasoning-effort variants and the
 # proxy's unsuffixed shorthands, which all resolve to an existing OpenRouter slug.
+# Antigravity's display name is the source of truth for what a suffixed ID serves:
+# `gemini-pro-agent` reports "Gemini 3.1 Pro (High)", so it backs the 3.1 pro slug
+# despite its version-less ID. The `-high` variants are picked over the same
+# generation's `-low` so a slug always means the strongest available effort.
 const MODEL_ALIASES = Dict{String,String}(
-    "gemini-3-flash"         => "google/gemini-3-flash-preview",
-    "gemini-3-pro-low"       => "google/gemini-3-pro-preview",
-    "gemini-3-pro-high"      => "google/gemini-3-pro-preview",
-    "gemini-3.1-flash-image" => "google/gemini-3.1-flash-image-preview",
-    "gemini-3.1-pro-low"     => "google/gemini-3.1-pro-preview",
-    "gemini-3.1-pro-high"    => "google/gemini-3.1-pro-preview",
+    "gemini-3.7-flash-high" => "google/gemini-3.7-flash",
+    "gemini-3.6-flash-high" => "google/gemini-3.6-flash",
+    "gemini-pro-agent"      => "google/gemini-3.1-pro-preview",
 )
 
 const MODEL_MAP = merge(MODEL_MAP_DERIVED, MODEL_ALIASES)
@@ -287,7 +294,7 @@ function override_providers!(base_url::String, api_key_env_var::String;
         anthropic_base_url,
         "Bearer",
         api_key_env_var,
-        ANTHROPIC_THINKING_HEADERS,  # to bypass proxy cloaking add: "User-Agent" => CLAUDE_CLI_USER_AGENT
+        ANTHROPIC_THINKING_HEADERS,  # a claude-cli User-Agent alone does NOT bypass cloaking, see above
         cli_proxy_model_transform,
         AnthropicSchema(),
         "anthropic (overridden to cli_proxy_api)"
@@ -398,10 +405,13 @@ end
 
 # ============ Auth Check ============
 
-# Login command hint per account type (gemini intentionally omitted — not used).
+# Login command hint per account type. `gemini` (the retired gemini-cli path) is
+# intentionally absent: those credentials are skipped entirely below.
 const _LOGIN_CMD = Dict(
-    "claude" => "-claude-login",
-    "codex"  => "-codex-login",
+    "claude"      => "-claude-login",
+    "codex"       => "-codex-login",
+    "antigravity" => "-antigravity-login",
+    "xai"         => "-xai-login",
 )
 
 """
@@ -409,8 +419,9 @@ const _LOGIN_CMD = Dict(
 
 Inspect cli_proxy_api OAuth token files and log their expiry status at startup.
 Warns (non-fatal) for any expired or soon-to-expire account, with the exact
-re-login command. Gemini accounts are ignored. Returns the number of accounts
-that need attention.
+re-login command. Legacy `gemini` (gemini-cli) accounts are ignored — Google
+retired that client's free tier, so Gemini arrives as an `antigravity` account
+instead. Returns the number of accounts that need attention.
 """
 function check_cli_proxy_auth(; auth_dir::AbstractString="~/.cli-proxy-api", warn_within=Day(1))
     dir = expanduser(auth_dir)
@@ -422,7 +433,7 @@ function check_cli_proxy_auth(; auth_dir::AbstractString="~/.cli-proxy-api", war
         try
             acc = JSON3.read(read(f, String))
             typ = String(get(acc, :type, ""))
-            typ == "gemini" && continue                 # not used — skip
+            typ == "gemini" && continue                 # retired gemini-cli path — skip
             get(acc, :disabled, false) === true && continue
 
             exp_raw = get(acc, :expired, nothing)

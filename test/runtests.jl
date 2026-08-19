@@ -57,16 +57,17 @@ end
         # No date, no version pair: passed through under the vendor prefix.
         @test MODEL_MAP["claude-opus-5"] == "anthropic/claude-opus-5"
         @test MODEL_MAP["gpt-5.4-mini"] == "openai/gpt-5.4-mini"
-        @test MODEL_MAP["gemini-2.5-pro"] == "google/gemini-2.5-pro"
+        @test MODEL_MAP["gemini-3.1-flash-lite"] == "google/gemini-3.1-flash-lite"
     end
 
-    @testset "reverse map resolves shared slugs to the canonical native ID" begin
-        # The reasoning-effort variants map onto one slug, which carries no hint of the
-        # effort — so the slug has to resolve back to the plain model, not to -low/-high.
-        @test cli_proxy_model_transform("google/gemini-3-pro-preview") == "gemini-3-pro-preview"
-        @test cli_proxy_model_transform("google/gemini-3.1-pro-preview") == "gemini-3.1-pro-preview"
-        # An alias is the only native ID for its slug, so it stays reachable.
-        @test cli_proxy_model_transform("google/gemini-3.1-flash-image-preview") == "gemini-3.1-flash-image"
+    @testset "reverse map resolves Gemini slugs to the Antigravity native ID" begin
+        # Antigravity bakes the effort into the ID and drops the version from its
+        # strongest pro, so the slug resolves to a name that looks nothing like it.
+        @test cli_proxy_model_transform("google/gemini-3.1-pro-preview") == "gemini-pro-agent"
+        @test cli_proxy_model_transform("google/gemini-3.7-flash") == "gemini-3.7-flash-high"
+        @test cli_proxy_model_transform("google/gemini-3.6-flash") == "gemini-3.6-flash-high"
+        # Unsuffixed natives keep their own name.
+        @test cli_proxy_model_transform("google/gemini-3.1-flash-image") == "gemini-3.1-flash-image"
         @test cli_proxy_model_transform("anthropic/claude-opus-5") == "claude-opus-5"
         # Unknown models pass through untouched for the OpenRouter fallback.
         @test cli_proxy_model_transform("moonshotai/kimi-k2") == "moonshotai/kimi-k2"
@@ -75,6 +76,28 @@ end
     @testset "every mapping round-trips" begin
         @test all(haskey(MODEL_MAP_REVERSE, slug) for slug in values(MODEL_MAP))
         @test all(haskey(MODEL_MAP, native) for native in values(MODEL_MAP_REVERSE))
+        # Round-tripping alone would still pass if two natives shared a slug and the
+        # reverse map silently dropped one — which for Antigravity would mean sending a
+        # different reasoning effort than the caller's slug implies. Requiring the maps
+        # to be the same size pins them as true inverses.
+        @test length(MODEL_MAP) == length(MODEL_MAP_REVERSE)
+    end
+
+    @testset "every Gemini native ID is one the proxy actually serves" begin
+        # Guards the failure that cost the most time here: a mapping pointing at a
+        # plausible-looking model (gemini-3-pro-high) that Antigravity never exposed,
+        # which only surfaces as a 4xx at request time. This is the live catalogue of
+        # the antigravity provider; regenerate with
+        #   curl -s localhost:8317/v1/models -H "Authorization: Bearer $CLIPROXYAPI_API_KEY"
+        served = Set([
+            "gemini-3-flash", "gemini-3-flash-agent", "gemini-3.1-flash-image",
+            "gemini-3.1-flash-lite", "gemini-3.1-pro-low", "gemini-3.5-flash-extra-low",
+            "gemini-3.5-flash-low", "gemini-3.6-flash-high", "gemini-3.7-flash-high",
+            "gemini-pro-agent",
+        ])
+        gemini_natives = [n for n in keys(MODEL_MAP) if startswith(n, "gemini")]
+        @test !isempty(gemini_natives)
+        @test all(n -> n in served, gemini_natives)
     end
 
     @testset "mutate routes xAI/Grok through the proxy with native model names" begin
