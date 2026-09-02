@@ -38,6 +38,7 @@ const NATIVE_ANTHROPIC = [
     "claude-opus-4-8",
     "claude-sonnet-4-6",
     "claude-fable-5",
+    "claude-fable-5-1",
     "claude-sonnet-5",
     "claude-opus-5",  # LATEST Anthropic model - UPDATE ON NEW RELEASE
 ]
