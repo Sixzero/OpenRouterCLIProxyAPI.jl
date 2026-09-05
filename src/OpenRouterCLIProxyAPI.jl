@@ -50,7 +50,8 @@ const NATIVE_OPENAI = [
     "gpt-5.5",
     "gpt-5.6-terra",
     "gpt-5.6-luna",
-    "gpt-5.6-sol",   # LATEST OpenAI model - UPDATE ON NEW RELEASE
+    "gpt-5.6-sol",
+    "gpt-6-astra",   # LATEST OpenAI model - UPDATE ON NEW RELEASE
     "codex-auto-review",
 ]
 
