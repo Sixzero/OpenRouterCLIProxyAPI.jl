@@ -291,6 +291,15 @@ function override_deepseek_to_opencode!(; verbose::Bool=false)
     verbose && @info "Overrode deepseek to route through OpenCode Go"
 end
 
+# Pins every turn of one conversation to one upstream credential when the proxy runs
+# with routing.session-affinity, so the provider prompt cache is hit on every turn
+# instead of ~1/N with N credentials round-robining. Resolved per request (see
+# OpenRouter `<session_id?>`): the agent sets it to the todo id; omitted when unset.
+# NOT `X-Session-ID`: that header gives affinity but makes the proxy drop its derived
+# Codex `prompt_cache_key`, so OpenAI-side caching misses (measured: 1/5 hits). The
+# Claude Code header is affinity priority 1 AND scopes the Codex prompt cache (5/5).
+const SESSION_HEADERS = Dict{String,String}("X-Claude-Code-Session-Id" => "<session_id?>")
+
 function override_providers!(base_url::String, api_key_env_var::String;
                              gemini::Bool=false, verbose::Bool=false)
     anthropic_base_url = replace(base_url, r"/v1/?$" => "")
@@ -299,7 +308,7 @@ function override_providers!(base_url::String, api_key_env_var::String;
         anthropic_base_url,
         "Bearer",
         api_key_env_var,
-        Dict{String,String}(),  # a claude-cli User-Agent alone does NOT bypass cloaking, see above
+        copy(SESSION_HEADERS),  # a claude-cli User-Agent alone does NOT bypass cloaking, see above
         cli_proxy_model_transform,
         AnthropicSchema(),
         "anthropic (overridden to cli_proxy_api)"
@@ -309,7 +318,7 @@ function override_providers!(base_url::String, api_key_env_var::String;
         base_url,
         "Bearer",
         api_key_env_var,
-        Dict{String,String}(),
+        copy(SESSION_HEADERS),
         cli_proxy_model_transform,
         ChatCompletionSchema(),
         "openai (overridden to cli_proxy_api)"
@@ -327,7 +336,7 @@ function override_providers!(base_url::String, api_key_env_var::String;
         base_url,
         "Bearer",
         api_key_env_var,
-        Dict{String,String}(),
+        copy(SESSION_HEADERS),
         xai_proxy_transform,
         ChatCompletionSchema(),
         "xai (overridden to cli_proxy_api)"
@@ -341,7 +350,7 @@ function override_providers!(base_url::String, api_key_env_var::String;
             base_url,
             "Bearer",
             api_key_env_var,
-            Dict{String,String}(),
+            copy(SESSION_HEADERS),
             google_proxy_transform,
             ChatCompletionSchema(),
             "google-ai-studio (overridden to cli_proxy_api)"
@@ -390,7 +399,7 @@ function setup_cli_proxy!(;
         base_url,
         "Bearer",
         api_key_env_var,
-        Dict{String,String}(),
+        copy(SESSION_HEADERS),
         cli_proxy_model_transform,
         ChatCompletionSchema(),
         "CLI Proxy API - routes to local proxy"
