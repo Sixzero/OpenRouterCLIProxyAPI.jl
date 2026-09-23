@@ -128,6 +128,7 @@ const MODEL_MAP_DERIVED = merge(
 # despite its version-less ID. The `-high` variants are picked over the same
 # generation's `-low` so a slug always means the strongest available effort.
 const MODEL_ALIASES = Dict{String,String}(
+    "gemini-3.8-flash-high" => "google/gemini-3.8-flash",
     "gemini-3.7-flash-high" => "google/gemini-3.7-flash",
     "gemini-3.6-flash-high" => "google/gemini-3.6-flash",
     "gemini-pro-agent"      => "google/gemini-3.1-pro-preview",

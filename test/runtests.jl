@@ -72,6 +72,7 @@ end
         # Antigravity bakes the effort into the ID and drops the version from its
         # strongest pro, so the slug resolves to a name that looks nothing like it.
         @test cli_proxy_model_transform("google/gemini-3.1-pro-preview") == "gemini-pro-agent"
+        @test cli_proxy_model_transform("google/gemini-3.8-flash") == "gemini-3.8-flash-high"
         @test cli_proxy_model_transform("google/gemini-3.7-flash") == "gemini-3.7-flash-high"
         @test cli_proxy_model_transform("google/gemini-3.6-flash") == "gemini-3.6-flash-high"
         # Unsuffixed natives keep their own name.
@@ -99,10 +100,9 @@ end
         # the antigravity provider; regenerate with
         #   curl -s localhost:8317/v1/models -H "Authorization: Bearer $CLIPROXYAPI_API_KEY"
         served = Set([
-            "gemini-3-flash", "gemini-3-flash-agent", "gemini-3.1-flash-image",
-            "gemini-3.1-flash-lite", "gemini-3.1-pro-low", "gemini-3.5-flash-extra-low",
-            "gemini-3.5-flash-low", "gemini-3.6-flash-high", "gemini-3.7-flash-high",
-            "gemini-pro-agent",
+            "gemini-3-flash", "gemini-3.1-flash-image", "gemini-3.1-flash-lite",
+            "gemini-3.1-pro-low", "gemini-3.5-flash-lite", "gemini-3.6-flash-high",
+            "gemini-3.7-flash-high", "gemini-3.8-flash-high", "gemini-pro-agent",
         ])
         gemini_natives = [n for n in keys(MODEL_MAP) if startswith(n, "gemini")]
         @test !isempty(gemini_natives)
