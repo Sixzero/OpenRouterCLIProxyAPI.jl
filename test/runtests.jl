@@ -56,7 +56,15 @@ end
         @test MODEL_MAP["claude-3-5-haiku-20241022"] == "anthropic/claude-3.5-haiku"
         # No date, no version pair: passed through under the vendor prefix.
         @test MODEL_MAP["claude-opus-5"] == "anthropic/claude-opus-5"
+        # A point release dots its version like any other pair, so the native ID and the
+        # OpenRouter slug differ by more than a prefix — the one thing that made Opus 5.5
+        # easy to wire up wrong (`claude-opus-5.5` is NOT a native ID the proxy accepts).
+        @test MODEL_MAP["claude-opus-5-5"] == "anthropic/claude-opus-5.5"
         @test MODEL_MAP["gpt-5.4-mini"] == "openai/gpt-5.4-mini"
+        # OpenAI ids are already dotted, so they pass through verbatim under the prefix —
+        # gpt-6-sol stays gpt-6-sol, it does NOT become gpt-6.0-sol.
+        @test MODEL_MAP["gpt-6-sol"] == "openai/gpt-6-sol"
+        @test MODEL_MAP["gpt-6-luna"] == "openai/gpt-6-luna"
         @test MODEL_MAP["gemini-3.1-flash-lite"] == "google/gemini-3.1-flash-lite"
     end
 
@@ -69,6 +77,7 @@ end
         # Unsuffixed natives keep their own name.
         @test cli_proxy_model_transform("google/gemini-3.1-flash-image") == "gemini-3.1-flash-image"
         @test cli_proxy_model_transform("anthropic/claude-opus-5") == "claude-opus-5"
+        @test cli_proxy_model_transform("anthropic/claude-opus-5.5") == "claude-opus-5-5"
         # Unknown models pass through untouched for the OpenRouter fallback.
         @test cli_proxy_model_transform("moonshotai/kimi-k2") == "moonshotai/kimi-k2"
     end

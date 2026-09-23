@@ -40,7 +40,8 @@ const NATIVE_ANTHROPIC = [
     "claude-fable-5",
     "claude-fable-5-1",
     "claude-sonnet-5",
-    "claude-opus-5",  # LATEST Anthropic model - UPDATE ON NEW RELEASE
+    "claude-opus-5",
+    "claude-opus-5-5",  # LATEST Anthropic model - UPDATE ON NEW RELEASE
 ]
 
 const NATIVE_OPENAI = [
@@ -51,7 +52,9 @@ const NATIVE_OPENAI = [
     "gpt-5.6-terra",
     "gpt-5.6-luna",
     "gpt-5.6-sol",
-    "gpt-6-astra",   # LATEST OpenAI model - UPDATE ON NEW RELEASE
+    "gpt-6-astra",
+    "gpt-6-sol",
+    "gpt-6-luna",    # LATEST OpenAI model - UPDATE ON NEW RELEASE
     "codex-auto-review",
 ]
 
