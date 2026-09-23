@@ -163,7 +163,7 @@ actually usable/visible everywhere else. Search each repo for
 |---|---|---|
 | 1 | `awesome/CLIProxyAPI` `internal/registry/models/models.json` | Add the model block (id, display_name, created, thinking levels), then rebuild + restart (steps 2–4). |
 | 2 | `OpenRouterCLIProxyAPI.jl` `src/OpenRouterCLIProxyAPI.jl` → `MODEL_MAP_ANTHROPIC` / `MODEL_MAP_OPENAI` / `MODEL_MAP_GEMINI` | Add `"<native-id>" => "<provider>/<or-id>"`. Without this you get `502: unknown provider for model …`. Move the `# LATEST … UPDATE ON NEW RELEASE` comment to the new flagship. |
-| 3 | `OpenRouter.jl` `src/storage.jl` → `MODEL_ALIASES` | If it's the new provider flagship, repoint the short alias (`"claude"`, `"gpt5"`, …). |
+| 3 | `OpenRouter.jl` `src/storage.jl` → `MODEL_ALIASES` | If it's the new provider flagship, repoint the short alias (`"claude"`, `"gpt"`, …). |
 | 4 | `OpenRouter.jl` `scripts/export_models_json.jl` | Re-run it (`julia --project=. scripts/export_models_json.jl`) to refresh `frontend/src/assets/models_data.json`. The OpenRouter list must already carry the model. |
 | 5 | `todoforai/packages` `shared-fbe/src/thinkingLevels.ts` → `THINKING_LEVELS_BY_MODEL` | Add `'<normalized-id>': [...levels]` (normalized = lowercase, dots→dashes, last path segment). Mirror the registry's `thinking.levels`. Without this the UI shows no thinking badges. |
 | 6 | `todoforai/frontend` `src/constants/recommendedModels.ts` → `RECOMMENDED_MODELS` | Add the model if it should appear in the recommended list (place by tier). |
