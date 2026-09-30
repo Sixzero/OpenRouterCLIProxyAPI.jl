@@ -66,6 +66,7 @@ end
         # gpt-6-sol stays gpt-6-sol, it does NOT become gpt-6.0-sol.
         @test MODEL_MAP["gpt-6-sol"] == "openai/gpt-6-sol"
         @test MODEL_MAP["gpt-6-luna"] == "openai/gpt-6-luna"
+        @test MODEL_MAP["gpt-6.1-sol"] == "openai/gpt-6.1-sol"
         @test MODEL_MAP["gemini-3.1-flash-lite"] == "google/gemini-3.1-flash-lite"
     end
 
