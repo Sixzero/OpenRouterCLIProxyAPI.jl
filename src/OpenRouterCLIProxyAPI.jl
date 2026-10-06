@@ -290,7 +290,9 @@ function override_deepseek_to_opencode!(; verbose::Bool=false)
         OPENCODE_GO_URL,
         "Bearer",
         "OPENCODE_API_KEY",
-        Dict{String,String}(),
+        # Same headers as OpenRouter.jl's `opencode_go` (x-opencode-session): Go
+        # 400s every request without it ("cannot be routed efficiently").
+        copy(OpenRouter.get_provider_info("opencode_go").default_headers),
         opencode_go_deepseek_transform,
         ChatCompletionSchema(),
         "deepseek (overridden to opencode_go)"
