@@ -273,7 +273,7 @@ Set `gemini=true` to also override google-ai-studio.
 # Overriding the `deepseek` provider makes that unmissable: existing model ids
 # (`deepseek:deepseek/deepseek-v4-pro`) keep working and go to the subscription.
 const OPENCODE_GO_URL = "https://opencode.ai/zen/go/v1"
-const OPENCODE_GO_MODELS = Set(["deepseek/deepseek-v4-pro", "deepseek/deepseek-v4-flash"])
+const OPENCODE_GO_MODELS = Set(["deepseek/deepseek-v4-pro", "deepseek/deepseek-v4-flash", "deepseek/deepseek-v4.1-flash"])
 
 """Bare native id for OpenCode Go; unsupported DeepSeek models fail loudly
 instead of being silently posted to an endpoint that doesn't serve them."""
