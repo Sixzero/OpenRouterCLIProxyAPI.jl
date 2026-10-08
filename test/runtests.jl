@@ -61,6 +61,7 @@ end
         # easy to wire up wrong (`claude-opus-5.5` is NOT a native ID the proxy accepts).
         @test MODEL_MAP["claude-opus-5-5"] == "anthropic/claude-opus-5.5"
         @test MODEL_MAP["claude-sonnet-5-5"] == "anthropic/claude-sonnet-5.5"
+        @test MODEL_MAP["claude-haiku-5-5"] == "anthropic/claude-haiku-5.5"
         @test MODEL_MAP["gpt-5.4-mini"] == "openai/gpt-5.4-mini"
         # OpenAI ids are already dotted, so they pass through verbatim under the prefix —
         # gpt-6-sol stays gpt-6-sol, it does NOT become gpt-6.0-sol.
@@ -82,6 +83,7 @@ end
         @test cli_proxy_model_transform("anthropic/claude-opus-5") == "claude-opus-5"
         @test cli_proxy_model_transform("anthropic/claude-opus-5.5") == "claude-opus-5-5"
         @test cli_proxy_model_transform("anthropic/claude-sonnet-5.5") == "claude-sonnet-5-5"
+        @test cli_proxy_model_transform("anthropic/claude-haiku-5.5") == "claude-haiku-5-5"
         # Unknown models pass through untouched for the OpenRouter fallback.
         @test cli_proxy_model_transform("moonshotai/kimi-k2") == "moonshotai/kimi-k2"
     end
