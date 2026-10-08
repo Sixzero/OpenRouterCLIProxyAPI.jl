@@ -43,7 +43,7 @@ const NATIVE_ANTHROPIC = [
     "claude-sonnet-5-5",
     "claude-opus-5",
     "claude-opus-5-5",
-    "claude-sonnet-5-5",  # LATEST Anthropic model - UPDATE ON NEW RELEASE
+    "claude-haiku-5-5",   # LATEST Anthropic model - UPDATE ON NEW RELEASE
 ]
 
 const NATIVE_OPENAI = [
