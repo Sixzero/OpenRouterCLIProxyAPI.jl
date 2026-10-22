@@ -72,9 +72,8 @@ end
     end
 
     @testset "reverse map resolves Gemini slugs to the Antigravity native ID" begin
-        # Antigravity bakes the effort into the ID and drops the version from its
-        # strongest pro, so the slug resolves to a name that looks nothing like it.
-        @test cli_proxy_model_transform("google/gemini-3.1-pro-preview") == "gemini-pro-agent"
+        # Antigravity bakes the effort into the ID.
+        @test cli_proxy_model_transform("google/gemini-4-argon") == "gemini-4-argon-high"
         @test cli_proxy_model_transform("google/gemini-3.8-flash") == "gemini-3.8-flash-high"
         @test cli_proxy_model_transform("google/gemini-3.7-flash") == "gemini-3.7-flash-high"
         @test cli_proxy_model_transform("google/gemini-3.6-flash") == "gemini-3.6-flash-high"
@@ -107,7 +106,7 @@ end
         served = Set([
             "gemini-3-flash", "gemini-3.1-flash-image", "gemini-3.1-flash-lite",
             "gemini-3.1-pro-low", "gemini-3.5-flash-lite", "gemini-3.6-flash-high",
-            "gemini-3.7-flash-high", "gemini-3.8-flash-high", "gemini-pro-agent",
+            "gemini-3.7-flash-high", "gemini-3.8-flash-high", "gemini-4-argon-high",
         ])
         gemini_natives = [n for n in keys(MODEL_MAP) if startswith(n, "gemini")]
         @test !isempty(gemini_natives)

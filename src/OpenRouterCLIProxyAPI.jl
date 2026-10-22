@@ -110,7 +110,8 @@ const PROXY_ONLY_MODELS = Dict{String,@NamedTuple{name::String, context_length::
 # native ID — so the forward and reverse maps stay genuine inverses and no tie-break
 # between effort levels is needed. Older generations the proxy still lists (gemini-3-flash,
 # gemini-3-flash-agent, gemini-3.5-flash-low/-extra-low, gemini-3.1-pro-low) are
-# deliberately omitted. Antigravity currently has no pro above 3.1.
+# deliberately omitted. Pro tier = gemini-4-argon-high (served as `gemini-4-argon-trial`
+# upstream as of 2026-10-22); `gemini-pro-agent` (3.1 pro) is gone from the proxy.
 const NATIVE_GEMINI = [
     "gemini-3.1-flash-lite",
     "gemini-3.1-flash-image",
@@ -126,15 +127,13 @@ const MODEL_MAP_DERIVED = merge(
 
 # Native IDs that do not follow the rule above: reasoning-effort variants and the
 # proxy's unsuffixed shorthands, which all resolve to an existing OpenRouter slug.
-# Antigravity's display name is the source of truth for what a suffixed ID serves:
-# `gemini-pro-agent` reports "Gemini 3.1 Pro (High)", so it backs the 3.1 pro slug
-# despite its version-less ID. The `-high` variants are picked over the same
+# The `-high` variants are picked over the same
 # generation's `-low` so a slug always means the strongest available effort.
 const MODEL_ALIASES = Dict{String,String}(
     "gemini-3.8-flash-high" => "google/gemini-3.8-flash",
     "gemini-3.7-flash-high" => "google/gemini-3.7-flash",
     "gemini-3.6-flash-high" => "google/gemini-3.6-flash",
-    "gemini-pro-agent"      => "google/gemini-3.1-pro-preview",
+    "gemini-4-argon-high"   => "google/gemini-4-argon",
 )
 
 const MODEL_MAP = merge(MODEL_MAP_DERIVED, MODEL_ALIASES)
