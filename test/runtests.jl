@@ -68,6 +68,7 @@ end
         @test MODEL_MAP["gpt-6-sol"] == "openai/gpt-6-sol"
         @test MODEL_MAP["gpt-6-luna"] == "openai/gpt-6-luna"
         @test MODEL_MAP["gpt-6.1-sol"] == "openai/gpt-6.1-sol"
+        @test MODEL_MAP["gpt-6.1-terra"] == "openai/gpt-6.1-terra"
         @test MODEL_MAP["gemini-3.1-flash-lite"] == "google/gemini-3.1-flash-lite"
     end
 
