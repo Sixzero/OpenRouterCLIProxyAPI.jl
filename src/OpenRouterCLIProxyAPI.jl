@@ -43,7 +43,9 @@ const NATIVE_ANTHROPIC = [
     "claude-sonnet-5-5",
     "claude-opus-5",
     "claude-opus-5-5",
-    "claude-haiku-5-5",   # LATEST Anthropic model - UPDATE ON NEW RELEASE
+    "claude-haiku-5-5",
+    # New releases need no entry: cli_proxy_model_transform derives the native id
+    # (see native_fallback). List one here only for the non-mutate cli_proxy_api endpoint.
 ]
 
 const NATIVE_OPENAI = [
@@ -152,8 +154,28 @@ const MODEL_MAP_REVERSE = merge(
 
 Converts OpenRouter model ID to native proxy model ID.
 E.g., "anthropic/claude-opus-4.5" → "claude-opus-4-5-20251101"
+
+Ids missing from MODEL_MAP_REVERSE (a release newer than this package) fall back to the
+vendor's naming rule, so a new model works without a code change:
+"anthropic/claude-fable-5.2" → "claude-fable-5-2", "openai/gpt-7" → "gpt-7".
+Non-proxy vendors pass through untouched (OpenRouter fallback).
 """
-cli_proxy_model_transform(model_id::AbstractString) = get(MODEL_MAP_REVERSE, model_id, model_id)
+cli_proxy_model_transform(model_id::AbstractString) =
+    get(MODEL_MAP_REVERSE, model_id) do
+        native_fallback(model_id)
+    end
+
+# Inverse of MODEL_MAP_DERIVED's rule for ids it does not list. Anthropic native ids
+# use dashes for the version ("claude-opus-5-5"); the others are the slug sans prefix.
+const PROXY_VENDOR_PREFIXES = ("openai/", "x-ai/", "google/")
+function native_fallback(model_id::AbstractString)
+    startswith(model_id, "anthropic/") &&
+        return replace(chopprefix(model_id, "anthropic/"), r"(\d)\.(\d)" => s"\1-\2")
+    for prefix in PROXY_VENDOR_PREFIXES
+        startswith(model_id, prefix) && return String(chopprefix(model_id, prefix))
+    end
+    return String(model_id)
+end
 
 # ============ Endpoint Injection ============
 
@@ -338,29 +360,25 @@ function override_providers!(base_url::String, api_key_env_var::String;
     # required for Grok — the proxy holds the xAI OAuth auth (and any egress
     # proxy_url for region-locked models like grok-4.5); the native `xai`
     # provider would hit api.x.ai directly with no credentials/region handling.
-    xai_proxy_transform(id::AbstractString) =
-        get(MODEL_MAP_REVERSE, String(id), replace(id, r"^x-ai/" => ""))
     set_provider!(
         "xai",
         base_url,
         "Bearer",
         api_key_env_var,
         copy(SESSION_HEADERS),
-        xai_proxy_transform,
+        cli_proxy_model_transform,
         ChatCompletionSchema(),
         "xai (overridden to cli_proxy_api)"
     )
 
     if gemini
-        google_proxy_transform(id::AbstractString) =
-            get(MODEL_MAP_REVERSE, String(id), replace(id, r"^google/" => ""))
         set_provider!(
             "google-ai-studio",
             base_url,
             "Bearer",
             api_key_env_var,
             copy(SESSION_HEADERS),
-            google_proxy_transform,
+            cli_proxy_model_transform,
             ChatCompletionSchema(),
             "google-ai-studio (overridden to cli_proxy_api)"
         )

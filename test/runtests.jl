@@ -86,6 +86,14 @@ end
         @test cli_proxy_model_transform("anthropic/claude-haiku-5.5") == "claude-haiku-5-5"
         # Unknown models pass through untouched for the OpenRouter fallback.
         @test cli_proxy_model_transform("moonshotai/kimi-k2") == "moonshotai/kimi-k2"
+        # Releases newer than NATIVE_* derive their native id by the vendor rule, so a new
+        # model needs no package bump (claude-fable-5.2 hit prod as "unknown provider").
+        @test cli_proxy_model_transform("anthropic/claude-fable-5.2") == "claude-fable-5-2"
+        @test cli_proxy_model_transform("anthropic/claude-opus-6") == "claude-opus-6"
+        @test cli_proxy_model_transform("anthropic/claude-sonnet-6.1") == "claude-sonnet-6-1"
+        @test cli_proxy_model_transform("openai/gpt-7.2-sol") == "gpt-7.2-sol"
+        @test cli_proxy_model_transform("x-ai/grok-5") == "grok-5"
+        @test cli_proxy_model_transform("google/gemini-5-argon") == "gemini-5-argon"
     end
 
     @testset "every mapping round-trips" begin
