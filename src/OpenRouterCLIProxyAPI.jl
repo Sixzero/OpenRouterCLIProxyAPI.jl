@@ -60,7 +60,9 @@ const NATIVE_OPENAI = [
     "gpt-6-sol",
     "gpt-6-luna",
     "gpt-6.1-sol",
-    "gpt-6.1-terra", # LATEST OpenAI model - UPDATE ON NEW RELEASE
+    "gpt-6.1-terra",
+    "gpt-6.2-sol",
+    "gpt-6.2-astra", # LATEST OpenAI model - UPDATE ON NEW RELEASE
     "codex-auto-review",
 ]
 
