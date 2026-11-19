@@ -139,6 +139,9 @@ const MODEL_ALIASES = Dict{String,String}(
     "gemini-3.7-flash-high" => "google/gemini-3.7-flash",
     "gemini-3.6-flash-high" => "google/gemini-3.6-flash",
     "gemini-4-argon-high"   => "google/gemini-4-argon",
+    # Proxy registers only the -xhigh id (levels low..xhigh); upstream serves
+    # `gemini-4-neon` with thinkingLevel from the `(level)` suffix, default xhigh.
+    "gemini-4-neon-xhigh"   => "google/gemini-4-neon",
     # In the antigravity catalog since 2026-11-10; Google still returns
     # gemini-4-carbon-disabled for our accounts, so it 404s until they enable it.
     "gemini-4-carbon-high"  => "google/gemini-4-carbon",
