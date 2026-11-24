@@ -23,7 +23,7 @@ end
     end
 
     @testset "mutate keeps Anthropic native request shape for caching" begin
-        original = Dict(name => get_provider_info(name) for name in ("anthropic", "openai", "google-ai-studio"))
+        original = Dict(name => get_provider_info(name) for name in ("anthropic", "openai", "google-ai-studio", "xai", "z.ai"))
 
         try
             setup_cli_proxy!(; mutate=true, base_url="http://localhost:8317/v1")
@@ -95,6 +95,23 @@ end
         @test cli_proxy_model_transform("openai/gpt-7.2-sol") == "gpt-7.2-sol"
         @test cli_proxy_model_transform("x-ai/grok-5") == "grok-5"
         @test cli_proxy_model_transform("google/gemini-5-argon") == "gemini-5-argon"
+        @test cli_proxy_model_transform("z-ai/glm-5.4") == "glm-5.4"
+    end
+
+    @testset "mutate routes z.ai GLM through the proxy (GLM Coding Plan)" begin
+        original = get_provider_info("z.ai")
+        try
+            setup_cli_proxy!(mutate=true)
+            zai = get_provider_info("z.ai")
+            @test zai.base_url == "http://localhost:8317/v1"
+            @test zai.model_name_transform("z-ai/glm-5.4") == "glm-5.4"
+            # Synthetic row until OpenRouter lists glm-5.4: dispatchable as `z.ai:`.
+            info, native, ep = OpenRouter.parse_provider_model("z.ai:z-ai/glm-5.4(high)")
+            @test native == "glm-5.4(high)"
+            @test ep.pricing !== nothing
+        finally
+            restore_provider!("z.ai", original)
+        end
     end
 
     @testset "every mapping round-trips" begin

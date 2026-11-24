@@ -98,10 +98,29 @@ const CODEX_AUTO_REVIEW_PRICING = Pricing(
     discount = nothing,
 )
 
+# No official GLM-5.4 API price yet: GLM-5.3's Z.AI list price (USD/token).
+const GLM_5_4_PRICING = Pricing(
+    prompt = "0.0000014",
+    completion = "0.0000044",
+    request = nothing,
+    image = nothing,
+    web_search = nothing,
+    internal_reasoning = nothing,
+    image_output = nothing,
+    audio = nothing,
+    input_audio_cache = nothing,
+    input_cache_read = "0.00000026",
+    input_cache_write = nothing,
+    discount = nothing,
+)
+
 # Models only on CLI proxy (not on OpenRouter) — need synthetic cache entries
 const PROXY_ONLY_MODELS = Dict{String,@NamedTuple{name::String, context_length::Int, pricing::Pricing}}(
     "openai/gpt-5.3-codex-spark" => (name = "GPT 5.3 Codex Spark", context_length = 128000, pricing = CODEX_SPARK_PRICING),
     "openai/codex-auto-review" => (name = "Codex Auto Review", context_length = 272000, pricing = CODEX_AUTO_REVIEW_PRICING),
+    # GLM Coding Plan (CLIProxyAPI `zai` openai-compatibility provider). Remove once
+    # OpenRouter lists z-ai/glm-5.4: that row then replaces this synthetic one.
+    "z-ai/glm-5.4" => (name = "Z.ai: GLM 5.4", context_length = 1048576, pricing = GLM_5_4_PRICING),
 )
 
 # Gemini reaches the proxy through the `antigravity` provider (-antigravity-login).
@@ -145,6 +164,9 @@ const MODEL_ALIASES = Dict{String,String}(
     # In the antigravity catalog since 2026-11-10; Google still returns
     # gemini-4-carbon-disabled for our accounts, so it 404s until they enable it.
     "gemini-4-carbon-high"  => "google/gemini-4-carbon",
+    # GLM Coding Plan via the proxy's `zai` provider; also keeps the cli_proxy_api
+    # endpoint once OpenRouter lists the slug (injection walks MODEL_MAP).
+    "glm-5.4"               => "z-ai/glm-5.4",
 )
 
 const MODEL_MAP = merge(MODEL_MAP_DERIVED, MODEL_ALIASES)
@@ -175,7 +197,7 @@ cli_proxy_model_transform(model_id::AbstractString) =
 
 # Inverse of MODEL_MAP_DERIVED's rule for ids it does not list. Anthropic native ids
 # use dashes for the version ("claude-opus-5-5"); the others are the slug sans prefix.
-const PROXY_VENDOR_PREFIXES = ("openai/", "x-ai/", "google/")
+const PROXY_VENDOR_PREFIXES = ("openai/", "x-ai/", "google/", "z-ai/")
 function native_fallback(model_id::AbstractString)
     startswith(model_id, "anthropic/") &&
         return replace(chopprefix(model_id, "anthropic/"), r"(\d)\.(\d)" => s"\1-\2")
@@ -200,8 +222,10 @@ function inject_cli_proxy_endpoints!(provider_name::String="cli_proxy_api")
     for (or_model_id, meta) in PROXY_ONLY_MODELS
         haskey(cache.models, or_model_id) && continue
         native_id = get(MODEL_MAP_REVERSE, or_model_id, or_model_id)
-        # Derive original provider from model ID (e.g. "openai" from "openai/gpt-5.3-codex-spark")
-        orig_provider = split(or_model_id, "/")[1]
+        # Derive original provider from model ID (e.g. "openai" from "openai/gpt-5.3-codex-spark");
+        # z-ai's provider slug is "z.ai", which endpoint matching does not equate with "z-ai".
+        author = split(or_model_id, "/")[1]
+        orig_provider = author == "z-ai" ? "z.ai" : author
         endpoints = ProviderEndpoint[]
         for (pname, ptag) in [(orig_provider, orig_provider), (provider_name, provider_name)]
             push!(endpoints, ProviderEndpoint(;
@@ -276,6 +300,8 @@ end
     override_providers!(base_url, api_key_env_var; gemini, verbose)
 
 Override providers to route through cli_proxy_api.
+`mutate=true` also overrides z.ai: EVERY `z.ai:` request (not only GLM-5.4) then goes to
+the proxy's `zai` provider, i.e. the GLM Coding Plan.
 Set `gemini=true` to also override google-ai-studio.
 """
 # Posing as Claude Code no longer works with a User-Agent alone: since the proxy's
@@ -379,6 +405,19 @@ function override_providers!(base_url::String, api_key_env_var::String;
         "xai (overridden to cli_proxy_api)"
     )
 
+    # Z.ai: the GLM Coding Plan sits in the proxy as the `zai` openai-compatibility
+    # provider; the native `z.ai` provider would hit the metered API (no balance).
+    set_provider!(
+        "z.ai",
+        base_url,
+        "Bearer",
+        api_key_env_var,
+        copy(SESSION_HEADERS),
+        cli_proxy_model_transform,
+        ChatCompletionSchema(),
+        "z.ai (overridden to cli_proxy_api)"
+    )
+
     if gemini
         set_provider!(
             "google-ai-studio",
@@ -414,6 +453,8 @@ Complete setup for CLI proxy:
 Set `mutate=true` to override the anthropic, openai and xai providers to route
 through cli_proxy_api (xai is always included since Grok has no usable direct
 path — the proxy holds its OAuth auth and egress proxy).
+`mutate=true` also overrides z.ai: EVERY `z.ai:` request (not only GLM-5.4) then goes to
+the proxy's `zai` provider, i.e. the GLM Coding Plan.
 Set `gemini=true` to also override google-ai-studio.
 Set `opencode=true` to route `deepseek` through the OpenCode Go subscription
 (`OPENCODE_API_KEY`) instead of the metered native DeepSeek API.
