@@ -2,7 +2,7 @@ using OpenRouterCLIProxyAPI
 using Test
 using Aqua
 using OpenRouter
-using OpenRouter: AnthropicSchema, ChatCompletionSchema, build_payload, get_provider_info, set_provider!
+using OpenRouter: AnthropicSchema, ChatCompletionSchema, ResponseSchema, GeminiSchema, build_payload, get_provider_info, set_provider!
 
 function restore_provider!(name::String, info)
     set_provider!(
@@ -33,7 +33,7 @@ end
 
             @test anthropic.schema isa AnthropicSchema
             @test anthropic.base_url == "http://localhost:8317"
-            @test openai.schema isa ChatCompletionSchema
+            @test openai.schema isa ResponseSchema
             @test openai.base_url == "http://localhost:8317/v1"
             @test build_payload(anthropic.schema, "hello", "claude-3-5-haiku-20241022", nothing, false; cache=:last)["messages"][1]["content"][1]["cache_control"] == Dict("type" => "ephemeral")
         finally

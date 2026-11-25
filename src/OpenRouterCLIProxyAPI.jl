@@ -4,7 +4,7 @@ using Dates: now, DateTime, Day
 using JSON3
 using OpenRouter
 using OpenRouter: add_provider, set_provider!, ChatCompletionSchema, ChatCompletionAnthropicSchema,
-                  AnthropicSchema, GeminiSchema, ProviderEndpoint, get_global_cache, Pricing, ZERO_PRICING,
+                  AnthropicSchema, GeminiSchema, ResponseSchema, ProviderEndpoint, get_global_cache, Pricing, ZERO_PRICING,
                   OpenRouterModel, CachedModel, ModelProviders
 
 export inject_cli_proxy_endpoints!, cli_proxy_model_transform, setup_cli_proxy!
@@ -378,6 +378,8 @@ function override_providers!(base_url::String, api_key_env_var::String;
         AnthropicSchema(),
         "anthropic (overridden to cli_proxy_api)"
     )
+    # Native Responses API (/v1/responses), not chat-completions: preserves reasoning
+    # encrypted_content across turns (chat-completions drops it).
     set_provider!(
         "openai",
         base_url,
@@ -385,7 +387,7 @@ function override_providers!(base_url::String, api_key_env_var::String;
         api_key_env_var,
         copy(SESSION_HEADERS),
         cli_proxy_model_transform,
-        ChatCompletionSchema(),
+        ResponseSchema(),
         "openai (overridden to cli_proxy_api)"
     )
 
