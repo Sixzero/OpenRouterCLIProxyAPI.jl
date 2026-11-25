@@ -4,7 +4,7 @@ using Dates: now, DateTime, Day
 using JSON3
 using OpenRouter
 using OpenRouter: add_provider, set_provider!, ChatCompletionSchema, ChatCompletionAnthropicSchema,
-                  AnthropicSchema, ProviderEndpoint, get_global_cache, Pricing, ZERO_PRICING,
+                  AnthropicSchema, GeminiSchema, ProviderEndpoint, get_global_cache, Pricing, ZERO_PRICING,
                   OpenRouterModel, CachedModel, ModelProviders
 
 export inject_cli_proxy_endpoints!, cli_proxy_model_transform, setup_cli_proxy!
@@ -419,14 +419,17 @@ function override_providers!(base_url::String, api_key_env_var::String;
     )
 
     if gemini
+        # Native Gemini format (/v1beta), not chat-completions: the proxy's OpenAI translator
+        # strips every thoughtSignature from responses (and only restores them from its own
+        # 1h in-memory cache), while the native path hands them to us to persist and replay.
         set_provider!(
             "google-ai-studio",
-            base_url,
+            replace(base_url, r"/v1/?$" => "/v1beta"),
             "Bearer",
             api_key_env_var,
             copy(SESSION_HEADERS),
             cli_proxy_model_transform,
-            ChatCompletionSchema(),
+            GeminiSchema(),
             "google-ai-studio (overridden to cli_proxy_api)"
         )
     end
